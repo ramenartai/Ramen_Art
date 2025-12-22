@@ -1,0 +1,80 @@
+/* wrapper around chat + handle */
+.chat-wrapper {
+  display: flex;
+  height: 100%;
+}
+
+/* vertical drag bar */
+.chat-resizer {
+  width: 6px;
+  cursor: col-resize;
+  background-color: #333;
+}
+
+.chat-resizer:hover {
+  background-color: #555;
+}
+
+/* actual chat panel */
+.chat-column {
+  flex: 1;
+  border-right: 8px solid #262626;
+  background-color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+}
+
+/* top title area */
+.chat-header {
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 1px solid #333;
+}
+
+/* middle scrollable content */
+.chat-content {
+  flex: 1;
+  padding: 8px 10px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+/* simple group title + placeholder */
+.chat-group-title {
+  margin-bottom: 6px;
+  color: #ddd;
+  font-weight: 600;
+}
+
+.chat-placeholder {
+  color: #999;
+}
+
+/* bottom input bar */
+.chat-input-bar {
+  display: flex;
+  padding: 6px;
+  border-top: 1px solid #333;
+  gap: 6px;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: 3px;
+  border: 1px solid #444;
+  background: #111;
+  color: #eee;
+  font-size: 12px;
+}
+
+.chat-send-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 3px;
+  background: #b32626;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}

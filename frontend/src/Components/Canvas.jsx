@@ -1,9 +1,12 @@
 import React from "react";
+import '../Css/canvas.css';
 
 const Canvas = () => {
   return (
     <main className="column canvas-column">
-      <span className="column-title canvas-title">WHITE CANVAS</span>
+      <div className="canvas-area">
+        <p className="canvas-placeholder">Drop or generate image</p>
+      </div>
     </main>
   );
 };
