@@ -19,7 +19,6 @@
 .chat-column {
   flex: 1;
   border-right: 8px solid #262626;
-  background-color: #1e1e1e;
   display: flex;
   flex-direction: column;
 }
@@ -37,6 +36,7 @@
   flex: 1;
   padding: 8px 10px;
   overflow-y: auto;
+  background-color: #0f0d0d;
   font-size: 12px;
 }
 
@@ -77,4 +77,24 @@
   color: #fff;
   font-size: 12px;
   cursor: pointer;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chat-msg {
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: #262626;
+  color: #eee;
+  font-size: 12px;
+}
+
+.chat-msg-user {
+  align-self: flex-end;
+  background: #b32626;
 }
