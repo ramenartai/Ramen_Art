@@ -1,12 +1,8 @@
-import './App.css'
-import Options from './Components/options';
+import React from "react";
+import Layout from "./Components/Layout";
 
-function App() {
-  return (
-    <>
-    <Options />
-    </>
-  )
-}
+const App = () => {
+  return <Layout />;
+};
 
 export default App;

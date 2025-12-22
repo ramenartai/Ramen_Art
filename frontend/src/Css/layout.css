@@ -1,0 +1,93 @@
+/* Layout */
+
+.app-root {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background-color: #2b2b2b;
+}
+
+.top-bar {
+  height: 40px;
+  background-color: #1d1d1d;
+  border-bottom: 4px solid #111;
+}
+
+.main-layout {
+  flex: 1;
+  display: flex;
+  background-color: #3e3e3e;
+}
+
+.column {
+  background-color: #666;
+  border-left: 8px solid #262626;
+  box-sizing: border-box;
+  position: relative;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.options-column {
+  width: 70px;
+}
+
+.panels-column {
+  width: 120px;
+}
+
+.canvas-column {
+  flex: 1;
+}
+
+.layers-column {
+  width: 180px;
+  border-right: 0;
+  border-left: 8px solid #262626;
+}
+
+.chat-column {
+  width: 180px;
+  border-right: 8px solid #262626;
+}
+
+.column-title {
+  margin-top: 16px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.canvas-title {
+  margin-top: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+@media (max-width: 900px) {
+  .options-column {
+    width: 50px;
+  }
+
+  .panels-column,
+  .layers-column,
+  .chat-column {
+    width: 120px;
+  }
+
+  .column-title {
+    font-size: 12px;
+  }
+}

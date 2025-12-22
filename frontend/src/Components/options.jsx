@@ -1,18 +1,11 @@
-import options from "../Elements/options.js"
+import React from "react";
 
-function Options(){
-    return (
-        <>
-        <div className="options">
-            {options.map((option) => (
-                <div>{option.title}</div>
-            ))}
-            {options.map((option) => (
-                <div>{option.icon}</div>
-            ))}
-        </div>
-        </>
-    )
-}
+const Options = () => {
+  return (
+    <aside className="column options-column">
+      <span className="column-title vertical-text">OPTIONS</span>
+    </aside>
+  );
+};
 
 export default Options;
