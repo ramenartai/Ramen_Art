@@ -52,11 +52,28 @@ const handleSubmit = async (e, input, setInput, messages, setMessages) => {
 
     // Debug log: raw response object
     console.log("[DEBUG] Raw response object:", response);
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonErr) {
+      data = null;
+    }
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      // Try to extract error message from API response
+      let apiErrorMsg = data?.error?.message || data?.error || response.statusText;
+      // Check for likely content moderation error
+      const isModeration = apiErrorMsg && (
+        apiErrorMsg.toLowerCase().includes("content filter") ||
+        apiErrorMsg.toLowerCase().includes("safety") ||
+        apiErrorMsg.toLowerCase().includes("policy") ||
+        apiErrorMsg.toLowerCase().includes("blocked")
+      );
+      if (isModeration) {
+        apiErrorMsg = "Your prompt was blocked by content moderation. Please rephrase your request to avoid unsafe or restricted content.";
+      }
+      return `Error: ${apiErrorMsg}`;
     }
 
-    const data = await response.json();
     // Debug log: parsed response JSON
     console.log("[DEBUG] Parsed response JSON:", data);
     const fullText = data.choices?.[0]?.message?.content || "No response";

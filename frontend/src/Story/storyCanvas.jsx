@@ -3,6 +3,8 @@ import {
   ReactFlow, 
   useNodesState, 
   useEdgesState, 
+  useReactFlow,
+  ReactFlowProvider,
   addEdge,
   Background,
   Controls,
@@ -11,6 +13,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Handle, Position } from '@xyflow/react';
+import getLayoutedElements from "./position";
 
 const StoryNode = ({ data }) => {
   const getColors = (type) => {
@@ -39,24 +42,19 @@ const StoryNode = ({ data }) => {
         position: 'relative'
       }}
     >
-      {/* SOURCE handle */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        style={{ background: border }}
-      />
-
-      {/* TARGET handle */}
       <Handle
         type="target"
-        position={Position.Left}
+        position={Position.Top}
         style={{ background: border }}
       />
-
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: border }}
+      />
       <div style={{ fontWeight: 700, color: title }}>
         {data.label}
       </div>
-
       {data.subtitle && (
         <div style={{ fontSize: 11 }}>
           {data.subtitle}
@@ -66,9 +64,6 @@ const StoryNode = ({ data }) => {
   );
 };
 
-
-
-// Node types mapping
 const nodeTypes = {
   storyNode: StoryNode
 };
@@ -77,45 +72,42 @@ const storyJSONtoFlow = (storyJson) => {
   const nodes = [];
   const edges = [];
 
-  // add main elements
   nodes.push({
     id: 'story-metadata',
     type: 'storyNode',
-    position: { x: 100, y: 100 },
     data: { 
       label: storyJson.story_metadata?.title || 'Story Title',
       subtitle: storyJson.story_metadata?.genre?.join(', ') || '',
       type: 'arc'
     }
-  })
+  });
 
-  // story arcs as chapters
-  storyJson.story_arcs?.forEach((arc, arcIndex) => {
+  storyJson.story_arcs?.forEach((arc) => {
     const arcNodeId = `arc-${arc.arc_id}`;
     nodes.push({
       id: arcNodeId,
       type: 'storyNode',
-      position: { x: 400 + arcIndex * 300, y: 150 },
       data: { 
         label: arc.arc_title,
         subtitle: arc.arc_summary || '',
         type: 'arc'
       }
     });
-    // Connect arc to main story
     edges.push({
       id: `story-to-arc-${arc.arc_id}`,
       source: 'story-metadata',
       target: arcNodeId,
-      type: 'default'
+      type: 'default',
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+      }
     });
-    // Add chapters and scenes
-    arc.chapters?.forEach((chapter, chIndex) => {
+    
+    arc.chapters?.forEach((chapter) => {
       const chapterNodeId = `chapter-${chapter.chapter_id}`;
       nodes.push({
         id: chapterNodeId,
         type: 'storyNode',
-        position: { x: 400 + arcIndex * 300, y: 250 + chIndex * 120 },
         data: { 
           label: chapter.chapter_title,
           subtitle: chapter.chapter_purpose,
@@ -126,16 +118,17 @@ const storyJSONtoFlow = (storyJson) => {
         id: `arc-to-chapter-${chapter.chapter_id}`,
         source: arcNodeId,
         target: chapterNodeId,
-        type: 'default'
+        type: 'default',
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+        }
       });
 
-      // Add scenes
-      chapter.scenes?.forEach((scene, sceneIndex) => {
+      chapter.scenes?.forEach((scene) => {
         const sceneNodeId = `scene-${scene.scene_id}`;
         nodes.push({
           id: sceneNodeId,
           type: 'storyNode',
-          position: { x: 700 + arcIndex * 300 + sceneIndex * 100, y: 270 + chIndex * 120 },
           data: { 
             label: scene.emotional_beat || 'Scene',
             subtitle: `${scene.characters_involved?.join(', ') || ''}`,
@@ -147,7 +140,10 @@ const storyJSONtoFlow = (storyJson) => {
           id: `chapter-to-scene-${scene.scene_id}`,
           source: chapterNodeId,
           target: sceneNodeId,
-          type: 'default'
+          type: 'default',
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          }
         });
       });
     });
@@ -156,8 +152,11 @@ const storyJSONtoFlow = (storyJson) => {
   return { nodes, edges };
 };
 
+// Inner component that uses useReactFlow()
+const StoryCanvasContent = ({ storyJson }) => {
+  const { fitView } = useReactFlow();
+  const [isLoading, setIsLoading] = useState(false);
 
-const StoryCanvas = ({ storyJson }) => {
   const defaultNodes = [
     {
       id: '1',
@@ -181,8 +180,8 @@ const StoryCanvas = ({ storyJson }) => {
     }
   ];
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState(defaultNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(defaultEdges);
 
   useEffect(() => {
     if (!storyJson) {
@@ -190,35 +189,102 @@ const StoryCanvas = ({ storyJson }) => {
       setEdges(defaultEdges);
       return;
     }
+    
+    setIsLoading(true);
     const { nodes: newNodes, edges: newEdges } = storyJSONtoFlow(storyJson);
-    setNodes(newNodes);
-    setEdges(newEdges);
-  }, [storyJson, setNodes, setEdges]);
+    const { nodes: layoutedNodes } = getLayoutedElements(newNodes, newEdges, 'TB');
+    
+    // Batch updates with RAF for smoothness
+    requestAnimationFrame(() => {
+      setNodes(layoutedNodes);
+      setEdges(newEdges);
+      setIsLoading(false);
+      
+      // Smooth fitView after render
+      setTimeout(() => {
+        fitView({ 
+          padding: 0.2,
+          includeHiddenNodes: false,
+          duration: 500
+        });
+      }, 50);
+    });
+  }, [storyJson, setNodes, setEdges, fitView]);
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
+  const onLayout = useCallback((direction = 'TB') => {
+    const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges, direction);
+    setNodes(layoutedNodes);
+    
+    setTimeout(() => {
+      fitView({ padding: 0.2, duration: 500 });
+    }, 100);
+  }, [nodes, edges, setNodes, fitView]);
+
   return (
-    <div className="canvas-area" style={{ width: "100%", height: "100%" }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        fitView
-        className="story-canvas-flow"
-        minZoom={0.2}
-        maxZoom={2}
-      >
-        <Background />
-        <Controls />
-        <MiniMap />
-      </ReactFlow>
-    </div>
+    <>
+      <div className="canvas-area" style={{ width: "100%", height: "100%", position: 'relative' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          animated="true"
+          fitView={false}
+          className="story-canvas-flow"
+          minZoom={0.2}
+          maxZoom={2}
+        >
+          <Background />
+          <Controls />
+          <MiniMap />
+        </ReactFlow>
+
+        {isLoading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 1000,
+            background: 'rgba(255,255,255,0.95)',
+            padding: '20px 30px',
+            borderRadius: 12,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            fontSize: 14,
+            color: '#374151'
+          }}>
+            🎨 Arranging your story...
+          </div>
+        )}
+      </div>
+
+      {/* Layout buttons */}
+      <div style={{
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        zIndex: 1000,
+        display: 'flex',
+        gap: 8
+      }}>
+      </div>
+    </>
+  );
+};
+
+// Wrapper with ReactFlowProvider
+const StoryCanvas = ({ storyJson }) => {
+  return (
+    <ReactFlowProvider>
+      <StoryCanvasContent storyJson={storyJson} />
+    </ReactFlowProvider>
   );
 };
 
