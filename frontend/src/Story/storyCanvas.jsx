@@ -6,12 +6,12 @@ import {
   addEdge,
   Background,
   Controls,
-  MiniMap
+  MiniMap,
+  MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { Handle, Position } from '@xyflow/react';
 
-
-// each node
 const StoryNode = ({ data }) => {
   const getColors = (type) => {
     switch (type) {
@@ -21,8 +21,6 @@ const StoryNode = ({ data }) => {
         return { bg: '#E0F2FE', border: '#3B82F6', title: '#1D4ED8' };
       case 'scene':
         return { bg: '#ECFDF3', border: '#22C55E', title: '#15803D' };
-      case 'character':
-        return { bg: '#F5F3FF', border: '#8B5CF6', title: '#6D28D9' };
       default:
         return { bg: '#F3F4F6', border: '#6B7280', title: '#111827' };
     }
@@ -38,32 +36,29 @@ const StoryNode = ({ data }) => {
         borderRadius: 10,
         padding: '8px 10px',
         minWidth: 180,
-        maxWidth: 260,
-        fontSize: 12,
-        cursor: 'pointer',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.08)'
+        position: 'relative'
       }}
     >
-      <div
-        style={{
-          fontWeight: 700,
-          fontSize: 12,
-          color: title,
-          marginBottom: 4,
-          whiteSpace: 'normal'
-        }}
-      >
+      {/* SOURCE handle */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{ background: border }}
+      />
+
+      {/* TARGET handle */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{ background: border }}
+      />
+
+      <div style={{ fontWeight: 700, color: title }}>
         {data.label}
       </div>
+
       {data.subtitle && (
-        <div
-          style={{
-            fontSize: 11,
-            color: '#374151',
-            whiteSpace: 'normal',
-            lineHeight: 1.35
-          }}
-        >
+        <div style={{ fontSize: 11 }}>
           {data.subtitle}
         </div>
       )}
@@ -72,17 +67,11 @@ const StoryNode = ({ data }) => {
 };
 
 
+
 // Node types mapping
 const nodeTypes = {
   storyNode: StoryNode
 };
-
-const defaultEdgeStyle = {
-  strokeWidth: 2,
-  stroke: '#999'
-};
-
-const defaultMarker = { type: 'arrowclosed', color: '#999' };
 
 const storyJSONtoFlow = (storyJson) => {
   const nodes = [];
@@ -118,8 +107,7 @@ const storyJSONtoFlow = (storyJson) => {
       id: `story-to-arc-${arc.arc_id}`,
       source: 'story-metadata',
       target: arcNodeId,
-      style: defaultEdgeStyle,
-      markerEnd: defaultMarker
+      type: 'default'
     });
     // Add chapters and scenes
     arc.chapters?.forEach((chapter, chIndex) => {
@@ -138,8 +126,7 @@ const storyJSONtoFlow = (storyJson) => {
         id: `arc-to-chapter-${chapter.chapter_id}`,
         source: arcNodeId,
         target: chapterNodeId,
-        style: defaultEdgeStyle,
-        markerEnd: defaultMarker
+        type: 'default'
       });
 
       // Add scenes
@@ -160,8 +147,7 @@ const storyJSONtoFlow = (storyJson) => {
           id: `chapter-to-scene-${scene.scene_id}`,
           source: chapterNodeId,
           target: sceneNodeId,
-        style: defaultEdgeStyle,
-        markerEnd: defaultMarker
+          type: 'default'
         });
       });
     });
@@ -172,14 +158,36 @@ const storyJSONtoFlow = (storyJson) => {
 
 
 const StoryCanvas = ({ storyJson }) => {
+  const defaultNodes = [
+    {
+      id: '1',
+      type: 'storyNode',
+      position: { x: 250, y: 100 },
+      data: { label: 'Chapter 1', subtitle: 'The new arc starts', type: 'arc' }
+    },
+    {
+      id: '2',
+      type: 'storyNode',
+      position: { x: 450, y: 200 },
+      data: { label: 'Chapter 2', subtitle: 'The first chapter of the main character', type: 'chapter' }
+    }
+  ];
+  const defaultEdges = [
+    {
+      id: 'e1-2',
+      source: '1',
+      target: '2',
+      type: 'default'
+    }
+  ];
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  // whenever chat sends new storyJson, rebuild flow
   useEffect(() => {
     if (!storyJson) {
-      setNodes([]);
-      setEdges([]);
+      setNodes(defaultNodes);
+      setEdges(defaultEdges);
       return;
     }
     const { nodes: newNodes, edges: newEdges } = storyJSONtoFlow(storyJson);
@@ -192,34 +200,24 @@ const StoryCanvas = ({ storyJson }) => {
     [setEdges]
   );
 
-    return (
+  return (
     <div className="canvas-area" style={{ width: "100%", height: "100%" }}>
-      {nodes.length > 0 ? (
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          className="story-canvas-flow"
-          minZoom={0.2}
-          maxZoom={2}
-        >
-          <Background />
-          <Controls />
-          <MiniMap />
-        </ReactFlow>
-      ) : (
-        <div className="story-default-empty">
-          <div className="story-default-icon">+</div>
-          <div className="story-default-text">
-            <h3>No Story Loaded</h3>
-            <p>Generate a new story from the AI panel to start visualizing.</p>
-          </div>
-        </div>
-      )}
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        nodeTypes={nodeTypes}
+        fitView
+        className="story-canvas-flow"
+        minZoom={0.2}
+        maxZoom={2}
+      >
+        <Background />
+        <Controls />
+        <MiniMap />
+      </ReactFlow>
     </div>
   );
 };
