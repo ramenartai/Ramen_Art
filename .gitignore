@@ -1,0 +1,16 @@
+# Byte-compiled / cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+
+# dotenv
+.env
+
+# Backend env example and local env
+backend/.env
+backend/.env.local
+
+# Node / frontend
+node_modules/
+dist/
