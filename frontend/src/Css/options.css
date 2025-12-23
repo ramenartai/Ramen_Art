@@ -45,3 +45,7 @@
   display: block;
   line-height: 1.2;
 }
+.options-tool-btn--active {
+  background-color: #333;
+  color: #fff;
+}
