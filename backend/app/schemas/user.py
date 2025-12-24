@@ -18,6 +18,7 @@ class UserInDB(BaseModel):
     id: Optional[str]
     email: EmailStr
     name: str
+    user_name: str
     hashed_password: str
     picture: Optional[str]
 
@@ -26,4 +27,5 @@ class UserOut(BaseModel): # for returning via API
     id: str
     email: EmailStr
     name: str
+    user_name: str
     picture: Optional[str]

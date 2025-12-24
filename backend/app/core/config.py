@@ -6,9 +6,9 @@ class Settings(BaseSettings):
     # App
     APP_NAME: Optional[str] = "MangaAI"
     DEBUG: Optional[bool] = True
+    FRONTEND_URL: Optional[str] = "http://localhost:5173"  # ✅ Added
 
     # Mongo
-    MONGO_URI: Optional[str] = None
     MONGODB_URI: str
     MONGODB_DB: str
 

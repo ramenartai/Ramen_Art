@@ -6,6 +6,7 @@ __pycache__/
 
 # dotenv
 .env
+venv
 
 # Backend env example and local env
 backend/.env

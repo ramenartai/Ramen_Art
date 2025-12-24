@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 
-/**
- * Register & Login Logic
- * Synchronized with FastAPI auth.py:
- * - RegisterRequest: email, user_name, password, name
- * - Route Prefix: /api/auth
- */
-export default function App() {
+export default function RegisterForm() {
   const [formData, setFormData] = useState({ 
     name: '', 
     user_name: '', 
@@ -21,12 +15,12 @@ export default function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 1. FIXED PATH: Match @router.post("/register")
-  // Matches RegisterRequest(email, user_name, password, name)
+  // ✅ FIXED: Removed duplicate /api/auth
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    
     try {
       const res = await fetch('http://localhost:8000/api/auth/register', {
         method: 'POST',
@@ -36,7 +30,6 @@ export default function App() {
       
       const data = await res.json();
       
-      // FastAPI returns errors in a "detail" field
       if (!res.ok) throw new Error(data.detail || 'Registration failed');
       
       // Successfully registered -> redirect to login
@@ -48,16 +41,18 @@ export default function App() {
     }
   };
 
-  // 2. FIXED PATH: Match @router.get("/login/google")
-  const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8000/api/auth/login/google';
+  // uses /register/google (new users only)
+  const handleGoogleRegister = () => {
+    window.location.href = 'http://localhost:8000/api/auth/register/google';
   };
 
   return (
     <div>
       <style>{css}</style>
       <form className="form" onSubmit={handleRegister}>
-        <h2 style={{ textAlign: 'center', marginBottom: '15px', color: '#111827' }}>Create Account</h2>
+        <h2 style={{ textAlign: 'center', marginBottom: '15px', color: '#111827' }}>
+          Create Account
+        </h2>
         
         {/* Full Name */}
         <div className="flex-column">
@@ -75,7 +70,7 @@ export default function App() {
           />
         </div>
 
-        {/* Username (Maps to user_name in backend) */}
+        {/* Username */}
         <div className="flex-column">
           <label>Username</label>
         </div>
@@ -137,7 +132,10 @@ export default function App() {
         </button>
         
         <p className="p">
-          Already have an account? <span className="span" onClick={() => window.location.href = '/login'}>Log In</span>
+          Already have an account?{' '}
+          <span className="span" onClick={() => window.location.href = '/login'}>
+            Log In
+          </span>
         </p>
         
         <p className="p line">Or With</p>
@@ -145,7 +143,7 @@ export default function App() {
         <button 
           type="button" 
           className="btn-google-large" 
-          onClick={handleGoogleLogin}
+          onClick={handleGoogleRegister}
         >
           <svg version="1.1" width="18" viewBox="0 0 512 512" style={{ marginRight: '10px' }}>
             <path style={{fill:'#FBBB00'}} d="M113.47,309.408L95.648,375.94l-65.139,1.378C11.042,341.211,0,299.9,0,256c0-42.451,10.324-82.483,28.624-117.732h0.014l57.992,10.632l25.404,57.644c-5.317,15.501-8.215,32.141-8.215,49.456C103.821,274.792,107.225,292.797,113.47,309.408z"></path>
@@ -153,13 +151,12 @@ export default function App() {
             <path style={{fill:'#28B446'}} d="M416.253,455.624l0.014,0.014C372.396,490.901,316.666,512,256,512c-97.491,0-182.252-54.491-225.491-134.681l82.961-67.91c21.619,57.698,77.278,98.771,142.53,98.771c28.047,0,54.323-7.582,76.87-20.818L416.253,455.624z"></path>
             <path style={{fill:'#F14336'}} d="M419.404,58.936l-82.933,67.896c-23.335-14.586-50.919-23.012-80.471-23.012c-66.729,0-123.429,42.957-143.965,102.724l-83.397-68.276h-0.014C71.23,56.123,157.06,0,256,0C318.115,0,375.068,22.126,419.404,58.936z"></path>
           </svg>
-          Continue with Google
+          Sign up with Google
         </button>
       </form>
     </div>
   );
 }
-
 
 const css = `
 .form {
@@ -211,14 +208,6 @@ const css = `
   display: flex;
   align-items: center;
   font-size: 1.2rem;
-}
-
-.flex-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  justify-content: space-between;
 }
 
 .span {
