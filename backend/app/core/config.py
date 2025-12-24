@@ -25,6 +25,20 @@ class Settings(BaseSettings):
     # External APIs
     GEMINI_API_KEY: Optional[str]
 
+    # ================= Z-IMAGE =================
+    Z_IMAGE_MODEL: str
+    Z_IMAGE_DEFAULT_RESOLUTION: str
+    Z_IMAGE_DEFAULT_STEPS: int
+    Z_IMAGE_DEFAULT_SHIFT: int
+    Z_IMAGE_DEFAULT_SEED: int
+
+    HF_TOKEN: str | None = None
+
+    # Cloudinary (NEW)
+    CLOUDINARY_CLOUD_NAME: str
+    CLOUDINARY_API_KEY: str
+    CLOUDINARY_API_SECRET: str
+
     class Config:
         env_file = ".env"
 
