@@ -2,13 +2,13 @@ from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
+from typing import Optional
 
 from app.core.config import settings
 import app.db.mongodb as mongodb
 from app.models.user import USER_COLLECTION
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 # ==================== JWT HELPERS ====================
@@ -61,14 +61,16 @@ async def get_current_user(
 
     return user
 
+
 # ==================== PASSWORD HELPERS ====================
-
 def hash_password(password: str) -> str:
+    """Hash password with bcrypt, truncating to 72 bytes."""
     password_bytes = password.encode("utf-8")[:72]
-    return pwd_context.hash(password_bytes.decode("utf-8", errors="ignore"))
-
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode("utf-8")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password against bcrypt hash, truncating to 72 bytes."""
     password_bytes = plain_password.encode("utf-8")[:72]
-    password_str = password_bytes.decode("utf-8", errors="ignore")
-    return pwd_context.verify(password_str, hashed_password)
+    return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))

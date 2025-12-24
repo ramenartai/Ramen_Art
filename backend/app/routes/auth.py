@@ -3,6 +3,8 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from datetime import datetime
 import httpx
+from google.auth.transport import requests
+
 
 from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
@@ -170,14 +172,26 @@ async def google_callback_register(code: str | None = None):
             )
 
         if resp.status_code != 200:
-            raise HTTPException(400, "Token exchange failed")
+            raise HTTPException(400, f"Token exchange failed: {resp.text}")
 
         token_data = resp.json()
+        
+        # FIXED IMPORTS & VERIFICATION
+        from google.oauth2 import id_token
+        from google.auth.transport import requests
+        
         id_info = id_token.verify_oauth2_token(
             token_data["id_token"],
-            grequests.Request(),
+            requests.Request(),
             settings.GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=60  # Fix clock skew
         )
+
+        # Verify issuer
+        if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            raise HTTPException(400, "Invalid token issuer")
+
+        # Rest of your code unchanged...
 
         existing_user = await mongodb.db[USER_COLLECTION].find_one(
             {"email": id_info["email"]}
@@ -246,8 +260,9 @@ async def google_callback(code: str | None = None):
         token_data = resp.json()
         id_info = id_token.verify_oauth2_token(
             token_data["id_token"],
-            grequests.Request(),
+            requests.Request(),  # Proper request holder
             settings.GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=60  # Allow 60s clock drift
         )
 
         user = await mongodb.db[USER_COLLECTION].find_one(
