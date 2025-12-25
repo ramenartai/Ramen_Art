@@ -5,9 +5,10 @@ import { Navigate } from "react-router-dom";
 const ProtectedRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
-
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+  
   useEffect(() => {
-    fetch("http://localhost:8000/api/auth/me", {
+    fetch(`${BACKEND_URL}/me`, {
       method: "GET",
       credentials: "include", // send cookies
     })
@@ -27,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
   }, []);
 
   if (loading) return null; // or a loading spinner
-  if (!authenticated) return <Navigate to="/register" replace />;
+  if (!authenticated) return <Navigate to="/login" replace />;
   return children;
 };
 

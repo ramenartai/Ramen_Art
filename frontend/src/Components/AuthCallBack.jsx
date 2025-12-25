@@ -1,46 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-/**
- * AuthCallback Component
- * Handles Google OAuth redirects
- * Route: /auth/callback
- * 
- * This component receives the JWT token from backend
- * and stores it in localStorage, then redirects to app
- */
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    
-    if (!token) {
-      setError('No authentication token received');
-      setTimeout(() => navigate('/login'), 3000);
-      return;
-    }
-
+    const verifyAuth = async () => {
     try {
-      // Store JWT token
-      localStorage.setItem('token', token);
+
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Optionally decode token to get user info
-      // const payload = JSON.parse(atob(token.split('.')[1]));
-      // localStorage.setItem('user', JSON.stringify(payload));
-      
-      // Redirect to main app
-      setTimeout(() => {
-        window.location.href = '/app';
-      }, 1000);
-      
+      navigate('/');
     } catch (err) {
       setError('Failed to process authentication');
       setTimeout(() => navigate('/login'), 3000);
     }
-  }, [searchParams, navigate]);
+  };
+
+  verifyAuth();
+}, [navigate]);
 
   if (error) {
     return (

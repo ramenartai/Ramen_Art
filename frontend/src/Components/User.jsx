@@ -12,12 +12,13 @@ const User = ({ userData }) => {
       const token = localStorage.getItem("token");
 
       // 2. Send the request to your specific endpoint
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
       await axios.post(
-        "http://127.0.0.1:8000/api/auth/logout", 
+        `${BACKEND_URL}/logout`,
         {}, // Empty body if the backend doesn't require specific data
         {
           headers: {
-            Authorization: `Bearer ${token}`, // standard way to pass auth tokens
+            Authorization: `Bearer ${token}`,
           },
         }
       );

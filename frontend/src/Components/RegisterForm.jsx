@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import '../Css/register.css'
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+
 export default function RegisterForm() {
   const [formData, setFormData] = useState({ 
     name: '', 
@@ -23,7 +25,7 @@ export default function RegisterForm() {
     setError(null);
     
     try {
-      const res = await fetch('http://localhost:8000/api/auth/register', {
+      const res = await fetch(`${BACKEND_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData), 
@@ -44,7 +46,7 @@ export default function RegisterForm() {
 
   // uses /register/google (new users only)
   const handleGoogleRegister = () => {
-    window.location.href = 'http://localhost:8000/api/auth/register/google';
+    window.location.href = `${BACKEND_URL}/register/google`;
   };
 
   return (

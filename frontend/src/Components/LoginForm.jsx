@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import '../Css/login.css'
+import { useNavigate } from 'react-router-dom';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -8,15 +9,16 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+  const navigate = useNavigate();
 
-  // ✅ FIXED: Removed duplicate /api/auth
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch('http://localhost:8000/api/auth/login', {
+      const res = await fetch(`${BACKEND_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -33,13 +35,13 @@ export default function LoginForm() {
       }
 
       const data = await res.json();
-      
-      // Store JWT token
-      localStorage.setItem('token', data.access_token);
+      // 1. Set the cookie so ProtectedRoute can find it
+      // This must match the name and logic used in AuthCallback
+      document.cookie = `access_token=${data.access_token}; path=/; max-age=${rememberMe ? 604800 : 86400}; SameSite=Lax;`;
+
       localStorage.setItem('user', JSON.stringify(data.user));
-      
       // Redirect to app
-      window.location.href = '/app';
+      navigate('/');
 
     } catch (err) {
       setError(err.message);
@@ -48,9 +50,8 @@ export default function LoginForm() {
     }
   };
 
-  // ✅ FIXED: Now uses /login/google (auto-registers if new)
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8000/api/auth/login/google';
+    window.location.href = `${BACKEND_URL}/login/google`;
   };
 
   return (

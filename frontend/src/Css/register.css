@@ -112,7 +112,7 @@
 }
 
 .span:hover {
-  color: #5596ff;
+  color: #fea6a6;
   text-decoration: underline;
 }
 
@@ -135,7 +135,8 @@
 }
 
 .button-submit:hover:not(:disabled) {
-  background-color: #1a62d6;
+  background-color: rgba(114, 8, 8, 0.2);
+  color: #ffdddd;
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0px #000;
 }

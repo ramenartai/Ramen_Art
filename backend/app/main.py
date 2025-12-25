@@ -28,7 +28,7 @@ async def shutdown():
 # Routes
 app.include_router(test.router, prefix="/api")
 app.include_router(auth.router)
-app.include_router(z_image.router)   # ✅ THIS WAS MISSING
+app.include_router(z_image.router)
 
 @app.get("/")
 def root():

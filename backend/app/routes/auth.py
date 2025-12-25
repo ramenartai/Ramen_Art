@@ -1,11 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Response
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from datetime import datetime
 import httpx
 from google.auth.transport import requests
-
-
 from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
 
@@ -14,6 +12,7 @@ from app.utils.auth_utils import (
     get_current_user,
     hash_password,
     verify_password,
+    set_auth_cookie
 )
 from app.db import mongodb
 from app.models.user import USER_COLLECTION, user_dict
@@ -25,9 +24,8 @@ from app.schemas.user import (
 )
 from app.core.config import settings
 
-router = APIRouter(prefix="/api/auth", tags=["Auth"])
+router = APIRouter(tags=["Auth"])
 security = HTTPBearer()
-
 
 # ==================== EMAIL / PASSWORD ====================
 
@@ -59,20 +57,16 @@ async def register(data: RegisterRequest):
 
         await mongodb.db[USER_COLLECTION].insert_one(user)
 
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content={"message": "User registered successfully"},
-            headers={"Location": "/login"}
-        )
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error : {str(e)}")
 
 
 @router.post("/login")
-async def login(data: LoginRequest):
+async def login(data: LoginRequest, response: Response):
     """Login with email + password"""
     try:
         user = await mongodb.db[USER_COLLECTION].find_one({"email": data.email})
@@ -89,10 +83,13 @@ async def login(data: LoginRequest):
             )
 
         token = create_jwt(str(user["_id"]), user["email"], data.rememberMe)
+        
+        max_age = 604800 if data.rememberMe else None
 
+        set_auth_cookie(response, token, max_age=max_age)
+        
         return {
-            "access_token": token,
-            "token_type": "bearer",
+            "message": "Login successful",
             "user": UserOut(
                 id=str(user["_id"]),
                 email=user["email"],
@@ -101,25 +98,38 @@ async def login(data: LoginRequest):
                 picture=user.get("picture"),
             ),
         }
-
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error : {str(e)}")
 
 
 @router.post("/logout", response_model=LogoutResponse)
-async def logout(current_user: dict = Depends(get_current_user)):
-    """JWT logout (client-side invalidation)"""
+async def logout(
+    response: Response, 
+    current_user: dict = Depends(get_current_user)
+):
     try:
+        # 1. Update DB (Good for session auditing)
         await mongodb.db[USER_COLLECTION].update_one(
             {"_id": current_user["_id"]},
             {"$set": {"last_logout": datetime.utcnow()}},
         )
+        
+        # 2. Clear the cookie 
+        # Ensure path matches where you set it (usually "/")
+        response.delete_cookie(
+            key="access_token",
+            path="/",
+            httponly=True,
+            samesite="lax",
+            # secure=settings.ENVIRONMENT == "production" # Match your setter
+        )
+        
         return LogoutResponse(message="Logged out successfully")
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to logout {str(e)}")
 
 
 @router.get("/me", response_model=UserOut)
@@ -134,7 +144,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
             picture=current_user.get("picture"),
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error : {str(e)}")
 
 
 # ==================== GOOGLE OAUTH – REGISTER ====================
@@ -153,7 +163,7 @@ def google_register():
     return RedirectResponse(auth_url)
 
 
-@router.get("/google/callback/register")
+@router.get("/api/auth/google/callback/register")
 async def google_callback_register(code: str | None = None):
     try:
         if not code:
@@ -177,8 +187,6 @@ async def google_callback_register(code: str | None = None):
         token_data = resp.json()
         
         # FIXED IMPORTS & VERIFICATION
-        from google.oauth2 import id_token
-        from google.auth.transport import requests
         
         id_info = id_token.verify_oauth2_token(
             token_data["id_token"],
@@ -190,8 +198,6 @@ async def google_callback_register(code: str | None = None):
         # Verify issuer
         if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
             raise HTTPException(400, "Invalid token issuer")
-
-        # Rest of your code unchanged...
 
         existing_user = await mongodb.db[USER_COLLECTION].find_one(
             {"email": id_info["email"]}
@@ -211,16 +217,20 @@ async def google_callback_register(code: str | None = None):
         }
 
         result = await mongodb.db[USER_COLLECTION].insert_one(user)
+        # 1. Create the internal JWT
         token = create_jwt(str(result.inserted_id), user["email"])
-
-        return RedirectResponse(
-            f"{settings.FRONTEND_URL}/auth/callback?token={token}"
-        )
+        
+        # frontend uses '/auth/callback'
+        response = RedirectResponse(url=f"{settings.FRONTEND_URL}/auth/callback") 
+        
+        set_auth_cookie(response, token)
+    
+        return response
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error : {str(e)}")
 
 
 # ==================== GOOGLE OAUTH – LOGIN ====================
@@ -239,7 +249,7 @@ def google_login():
     return RedirectResponse(auth_url)
 
 
-@router.get("/google/callback")
+@router.get("/api/auth/google/callback")
 async def google_callback(code: str | None = None):
     try:
         if not code:
@@ -285,14 +295,14 @@ async def google_callback(code: str | None = None):
 
         token = create_jwt(str(user["_id"]), user["email"])
 
-        return RedirectResponse(
-            f"{settings.FRONTEND_URL}/auth/callback?token={token}"
-        )
-
+        response = RedirectResponse(url=f"{settings.FRONTEND_URL}/auth/callback")
+        
+        set_auth_cookie(response, token, max_age=604800)
+        return response
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error : {str(e)}")
 
 
 # ==================== TOKEN REFRESH ====================
@@ -303,4 +313,4 @@ async def refresh_token(current_user: dict = Depends(get_current_user)):
         token = create_jwt(str(current_user["_id"]), current_user["email"])
         return {"access_token": token, "token_type": "bearer"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error : {str(e)}")

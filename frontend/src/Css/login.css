@@ -113,8 +113,8 @@
 }
 
 .flex-row input[type="checkbox"]:hover {
-  border-color: #555;
-  background-color: #333;
+  border-color: #b32626;
+  background-color: rgba(223, 110, 110, 0.2);
 }
 
 .flex-row input[type="checkbox"]:checked {
@@ -148,7 +148,7 @@
 }
 
 .span:hover {
-  color: #5596ff;
+  color: #fea6a6;
   text-decoration: underline;
 }
 
@@ -170,7 +170,8 @@
 }
 
 .button-submit:hover:not(:disabled) {
-  background-color: #1a62d6;
+  background-color: rgba(114, 8, 8, 0.2);
+  color: #ffdddd;
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0px #000;
 }
@@ -201,7 +202,8 @@
 
 .btn-google-large:hover {
   border: 1.5px solid #b32626;
-  background-color: #333;
+  background-color: rgba(223, 110, 110, 0.2);
+  color: #b32626;
 }
 
 .line {

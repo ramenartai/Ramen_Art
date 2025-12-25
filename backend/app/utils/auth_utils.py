@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 import bcrypt
 from typing import Optional
-
+from bson import ObjectId
+from bson.errors import InvalidId
 from app.core.config import settings
 import app.db.mongodb as mongodb
 from app.models.user import USER_COLLECTION
-
+from fastapi import Request
 security = HTTPBearer()
 
 # ==================== JWT HELPERS ====================
@@ -44,15 +45,37 @@ def verify_jwt(token: str) -> dict:
         )
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    token = credentials.credentials
-    payload = verify_jwt(token)
+async def get_current_user(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
 
-    user = await mongodb.db[USER_COLLECTION].find_one(
-        {"_id": payload.get("sub")}
-    )
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated: No token found",
+        )
+    payload = verify_jwt(token)
+    user_id_str = payload.get("sub")
+    
+    if not user_id_str:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token: missing subject",
+        )
+
+    try:
+        user = await mongodb.db[USER_COLLECTION].find_one(
+            {"_id": ObjectId(user_id_str)}
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user ID format",
+        )
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -60,6 +83,21 @@ async def get_current_user(
         )
 
     return user
+
+
+# ==================== LOGIN HELPERS ======================
+# Create a helper for cookie settings to keep it clean
+def set_auth_cookie(response: Response, token: str, max_age: int = 604800):
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        # Set to True only if not on localhost
+        secure=settings.ENVIRONMENT == "production", 
+        samesite="lax",
+        max_age=max_age,
+        path="/"
+    )
 
 
 # ==================== PASSWORD HELPERS ====================
