@@ -15,7 +15,7 @@ export default LoginPage;
 
 const PageWrapper = styled.div`
   min-height: 100vh;
-  background-color: #f6f7f9; /* off-white */
+  background-color: #1e1e1e; /* off-white */
   display: flex;
   align-items: center;
   justify-content: center;

@@ -3,13 +3,18 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./Components/Layout";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
+import ProtectedRoute from "./Services/protection.jsx";
 
 const App = () => {
   return (
     <Routes>
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<Layout />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Layout />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

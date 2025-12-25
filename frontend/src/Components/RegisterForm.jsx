@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../Css/register.css'
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({ 
@@ -48,9 +49,8 @@ export default function RegisterForm() {
 
   return (
     <div>
-      <style>{css}</style>
       <form className="form" onSubmit={handleRegister}>
-        <h2 style={{ textAlign: 'center', marginBottom: '15px', color: '#111827' }}>
+        <h2>
           Create Account
         </h2>
         
@@ -157,142 +157,3 @@ export default function RegisterForm() {
     </div>
   );
 }
-
-const css = `
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background-color: #ffffff;
-  padding: 30px;
-  width: 450px;
-  border-radius: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.flex-column > label {
-  color: #151717;
-  font-weight: 600;
-}
-
-.inputForm {
-  border: 1.5px solid #ecedec;
-  border-radius: 10px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  transition: 0.2s ease-in-out;
-  box-sizing: border-box;
-}
-
-.input {
-  flex: 1; 
-  margin-left: 10px;
-  border: none;
-  height: 100%;
-  background: transparent;
-}
-
-.input:focus {
-  outline: none;
-}
-
-.inputForm:focus-within {
-  border: 1.5px solid #2d79f3;
-}
-
-.eye-icon {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  font-size: 1.2rem;
-}
-
-.span {
-  font-size: 14px;
-  color: #2d79f3;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.button-submit {
-  margin: 10px 0 10px 0;
-  background-color: #151717;
-  border: none;
-  color: white;
-  font-size: 15px;
-  font-weight: 500;
-  border-radius: 10px;
-  height: 50px;
-  width: 100%;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.button-submit:disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-}
-
-.button-submit:hover:not(:disabled) {
-  background-color: #252727;
-}
-
-.error-message {
-  color: #dc2626;
-  font-size: 14px;
-  text-align: center;
-  margin: 5px 0;
-}
-
-.p {
-  text-align: center;
-  color: black;
-  font-size: 14px;
-  margin: 5px 0;
-}
-
-.btn-google-large {
-  margin-top: 10px;
-  width: 100%;
-  height: 50px;
-  border-radius: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: 500;
-  gap: 12px;
-  border: 1px solid #ededef;
-  background-color: white;
-  color: #3c4043;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.302), 0 1px 3.125px 0 rgba(60,64,67,0.149);
-}
-
-.btn-google-large:hover {
-  background-color: #f8f9fa;
-  border-color: #d2d2d2;
-}
-
-.line {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 15px 0;
-}
-
-.line::before, .line::after {
-  content: "";
-  height: 1px;
-  width: 30%;
-  background-color: #ededef;
-  position: absolute;
-}
-
-.line::before { left: 0; }
-.line::after { right: 0; }
-`;

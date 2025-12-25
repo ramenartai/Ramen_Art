@@ -1,0 +1,224 @@
+/* --- Global Container (for Register page) --- */
+.register {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1e1e1e;
+  /* Manga Halftone Overlay */
+  background-image: radial-gradient(#333 15%, transparent 16%);
+  background-size: 10px 10px;
+  padding: 20px;
+}
+
+/* --- Form Panel --- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: #1f1f1f; /* Dark manga background */
+  padding: 30px;
+  width: 450px;
+  border-radius: 20px;
+  border: 3px solid #000; /* Manga thick border */
+  box-shadow: 10px 10px 0px #000; /* Manga hard shadow */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #f1f1f1;
+}
+
+.form h2 {
+  text-align: center;
+  margin: 0 0 20px 0;
+  color: #f1f1f1;
+  font-size: 28px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* --- Labels --- */
+.flex-column > label {
+  color: #f1f1f1;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+/* --- Input Containers --- */
+.inputForm {
+  border: 1.5px solid #333;
+  border-radius: 10px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  transition: all 0.2s ease-in-out;
+  background-color: #2b2b2b;
+  box-sizing: border-box;
+}
+
+.inputForm svg {
+  fill: #aaa;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.input {
+  flex: 1;
+  margin-left: 10px;
+  border: none;
+  height: 100%;
+  background: transparent;
+  color: #f1f1f1;
+  font-size: 14px;
+}
+
+.input::placeholder {
+  color: #aaa;
+}
+
+.input:focus {
+  outline: none;
+}
+
+.inputForm:focus-within {
+  border: 1.5px solid #b32626;
+  transform: scale(1.01);
+  box-shadow: 0 0 0 3px rgba(179, 38, 38, 0.2);
+}
+
+/* --- Eye Icon --- */
+.eye-icon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+  color: #aaa;
+  transition: color 0.2s;
+}
+
+.eye-icon:hover {
+  color: #f1f1f1;
+}
+
+/* --- Links --- */
+.span {
+  font-size: 14px;
+  color: #b32626;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+.span:hover {
+  color: #5596ff;
+  text-decoration: underline;
+}
+
+/* --- Submit Button --- */
+.button-submit {
+  margin: 20px 0 10px 0;
+  background-color: #b32626;
+  border: 2px solid #000;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 10px;
+  height: 50px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 4px 4px 0px #000;
+}
+
+.button-submit:hover:not(:disabled) {
+  background-color: #1a62d6;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000;
+}
+
+.button-submit:disabled {
+  background-color: #444;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* --- Error Messages --- */
+.error-message {
+  color: #ff8e8e;
+  font-size: 14px;
+  text-align: center;
+  margin: 5px 0;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid #dc2626;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+/* --- Text Paragraphs --- */
+.p {
+  text-align: center;
+  color: #ccc;
+  font-size: 14px;
+  margin: 10px 0;
+}
+
+/* --- Google Button --- */
+.btn-google-large {
+  margin-top: 10px;
+  width: 100%;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  gap: 12px;
+  border: 1.5px solid #333;
+  background-color: #2b2b2b;
+  color: #f1f1f1;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.btn-google-large:hover {
+  border-color: #b32626;
+  background-color: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(179, 38, 38, 0.3);
+}
+
+/* --- Divider Line --- */
+.line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #aaa;
+}
+
+.line::before,
+.line::after {
+  content: "";
+  height: 2px;
+  width: 30%;
+  background-color: #333;
+  position: absolute;
+}
+
+.line::before {
+  left: 0;
+}
+
+.line::after {
+  right: 0;
+}
