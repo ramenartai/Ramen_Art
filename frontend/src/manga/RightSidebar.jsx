@@ -6,8 +6,108 @@ const RightSidebar = ({
     onPromptChange,
     isRefining,
     onRefinePrompt,
-    onResetPanels
+    onResetPanels,
+    activePanelId,
+    selectedCharacters,
+    characters,
+    panelPrompts,
+    setPanelPrompts,
+    panelCharacters,
+    setPanelCharacters
 }) => {
+    // Helper to get selected character objects
+    const availableCharacters = characters.filter(c => selectedCharacters.includes(c.id));
+
+    const handlePanelPromptChange = (e) => {
+        setPanelPrompts(prev => ({
+            ...prev,
+            [activePanelId]: e.target.value
+        }));
+    };
+
+    const handlePanelCharacterToggle = (charId) => {
+        setPanelCharacters(prev => {
+            const current = prev[activePanelId] || [];
+            const updated = current.includes(charId)
+                ? current.filter(id => id !== charId)
+                : [...current, charId];
+            return {
+                ...prev,
+                [activePanelId]: updated
+            };
+        });
+    };
+
+    if (activePanelId) {
+        return (
+            <aside className="right-sidebar panel-mode">
+                <div className="chat-header">
+                    <h3>Panel Configuration</h3>
+                    <div className="panel-badge">Panel {activePanelId}</div>
+                </div>
+
+                <div className="chat-content">
+                    {/* Panel Scence Description */}
+                    <div className="prompt-section">
+                        <label className="prompt-label">Panel Action</label>
+                        <textarea
+                            className="prompt-textarea"
+                            placeholder="Describe what happens in this specific panel... (e.g. 'Close up of Hero eyes widening in shock')"
+                            value={panelPrompts[activePanelId] || ''}
+                            onChange={handlePanelPromptChange}
+                            rows="4"
+                        />
+                        <button className="refine-prompt-btn" disabled>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                            </svg>
+                            Suggest Action
+                        </button>
+                    </div>
+
+                    {/* Character Selector for Panel */}
+                    <div className="settings-section">
+                        <label className="prompt-label">Characters in Panel</label>
+                        <div className="panel-chars-list">
+                            {availableCharacters.length === 0 ? (
+                                <p className="empty-message">No characters selected in story</p>
+                            ) : (
+                                availableCharacters.map(char => (
+                                    <div
+                                        key={char.id}
+                                        className={`panel-char-item ${(panelCharacters[activePanelId] || []).includes(char.id) ? 'selected' : ''}`}
+                                        onClick={() => handlePanelCharacterToggle(char.id)}
+                                    >
+                                        <div className="panel-char-avatar">
+                                            {char.image_url ? (
+                                                <img src={char.image_url} alt={char.character_name} />
+                                            ) : (
+                                                <span>{char.character_name[0]}</span>
+                                            )}
+                                        </div>
+                                        <span>{char.character_name}</span>
+                                        {(panelCharacters[activePanelId] || []).includes(char.id) && (
+                                            <svg className="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <button className="generate-btn">
+                        <span>Generate Panel</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                    </button>
+                </div>
+            </aside>
+        );
+    }
+
     return (
         <aside className="right-sidebar">
             <div className="chat-header">

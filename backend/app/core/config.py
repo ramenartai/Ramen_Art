@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     # Gemini AI
     GEMINI_API_KEY: Optional[str] = None
 
+    # Replicate AI (Image Generation)
+    REPLICATE_API_TOKEN: Optional[str] = None
+
+    # Stability AI (Image Generation)
+    STABILITY_API_KEY: Optional[str] = None
+
     # ================= Z-IMAGE =================
     Z_IMAGE_MODEL: str
     Z_IMAGE_DEFAULT_RESOLUTION: str

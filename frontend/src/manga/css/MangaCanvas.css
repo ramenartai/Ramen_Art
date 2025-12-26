@@ -130,6 +130,38 @@
     cursor: pointer;
 }
 
+.panel-rect {
+    fill: rgba(255, 255, 255, 0.05);
+    stroke: rgba(255, 255, 255, 0.3);
+    stroke-width: 1.5;
+    transition: all 0.3s ease;
+}
+
+.panel-rect.active {
+    fill: rgba(102, 126, 234, 0.15);
+    stroke: #667eea;
+    stroke-width: 3px;
+    filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5));
+}
+
+.interaction-hint {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.interaction-hint.active {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
 .layers-section {
     padding: 1rem 1.5rem;
     background: #16213e;

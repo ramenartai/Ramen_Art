@@ -26,16 +26,68 @@ const MangaCreator = () => {
     const [selectedTemplate, setSelectedTemplate] = useState(null);
     const [isPinned, setIsPinned] = useState(false);
     const [activePanelLayout, setActivePanelLayout] = useState(null);
+    const [activePanelId, setActivePanelId] = useState(null);
+    const [panelPrompts, setPanelPrompts] = useState({});
+    const [panelCharacters, setPanelCharacters] = useState({});
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
     const panelTemplates = [
-        { id: 1, layout: 'single', svg: <rect x="10" y="10" width="80" height="120" rx="4" /> },
-        { id: 2, layout: 'horizontal-3', svg: <><rect x="10" y="10" width="80" height="35" rx="4" /><rect x="10" y="50" width="80" height="35" rx="4" /><rect x="10" y="90" width="80" height="40" rx="4" /></> },
-        { id: 3, layout: 'grid-4', svg: <><rect x="10" y="10" width="38" height="58" rx="4" /><rect x="52" y="10" width="38" height="58" rx="4" /><rect x="10" y="72" width="38" height="58" rx="4" /><rect x="52" y="72" width="38" height="58" rx="4" /></> },
-        { id: 4, layout: 'vertical-split', svg: <><rect x="10" y="10" width="38" height="40" rx="4" /><rect x="52" y="10" width="38" height="40" rx="4" /><rect x="10" y="55" width="80" height="35" rx="4" /><rect x="10" y="95" width="80" height="35" rx="4" /></> },
-        { id: 5, layout: 'horizontal-split', svg: <><rect x="10" y="10" width="80" height="35" rx="4" /><rect x="10" y="50" width="80" height="35" rx="4" /><rect x="10" y="90" width="38" height="40" rx="4" /><rect x="52" y="90" width="38" height="40" rx="4" /></> },
-        { id: 6, layout: 'l-shape', svg: <><rect x="10" y="10" width="38" height="40" rx="4" /><rect x="52" y="10" width="38" height="40" rx="4" /><rect x="10" y="55" width="80" height="35" rx="4" /><rect x="10" y="95" width="38" height="35" rx="4" /><rect x="52" y="95" width="38" height="35" rx="4" /></> },
+        {
+            id: 1,
+            layout: 'single',
+            panels: [{ id: 'p1', x: 10, y: 10, width: 80, height: 120 }]
+        },
+        {
+            id: 2,
+            layout: 'horizontal-3',
+            panels: [
+                { id: 'p1', x: 10, y: 10, width: 80, height: 35 },
+                { id: 'p2', x: 10, y: 50, width: 80, height: 35 },
+                { id: 'p3', x: 10, y: 90, width: 80, height: 40 }
+            ]
+        },
+        {
+            id: 3,
+            layout: 'grid-4',
+            panels: [
+                { id: 'p1', x: 10, y: 10, width: 38, height: 58 },
+                { id: 'p2', x: 52, y: 10, width: 38, height: 58 },
+                { id: 'p3', x: 10, y: 72, width: 38, height: 58 },
+                { id: 'p4', x: 52, y: 72, width: 38, height: 58 }
+            ]
+        },
+        {
+            id: 4,
+            layout: 'vertical-split',
+            panels: [
+                { id: 'p1', x: 10, y: 10, width: 38, height: 40 },
+                { id: 'p2', x: 52, y: 10, width: 38, height: 40 },
+                { id: 'p3', x: 10, y: 55, width: 80, height: 35 },
+                { id: 'p4', x: 10, y: 95, width: 80, height: 35 }
+            ]
+        },
+        {
+            id: 5,
+            layout: 'horizontal-split',
+            panels: [
+                { id: 'p1', x: 10, y: 10, width: 80, height: 35 },
+                { id: 'p2', x: 10, y: 50, width: 80, height: 35 },
+                { id: 'p3', x: 10, y: 90, width: 38, height: 40 },
+                { id: 'p4', x: 52, y: 90, width: 38, height: 40 }
+            ]
+        },
+        {
+            id: 6,
+            layout: 'l-shape',
+            panels: [
+                { id: 'p1', x: 10, y: 10, width: 38, height: 40 },
+                { id: 'p2', x: 52, y: 10, width: 38, height: 40 },
+                { id: 'p3', x: 10, y: 55, width: 80, height: 35 },
+                { id: 'p4', x: 10, y: 95, width: 38, height: 35 },
+                { id: 'p5', x: 52, y: 95, width: 38, height: 35 }
+            ]
+        },
     ];
 
     useEffect(() => {
@@ -182,6 +234,7 @@ const MangaCreator = () => {
             setActivePanelLayout(template);
             // Save only the template ID to localStorage (not the JSX)
             localStorage.setItem('activePanelLayoutId', template.id.toString());
+            setActivePanelId(null); // Reset active panel on new template
             console.log('Template applied:', template.layout);
         }
     };
@@ -189,6 +242,7 @@ const MangaCreator = () => {
     const handleResetPanels = () => {
         setActivePanelLayout(null);
         setSelectedTemplate(null);
+        setActivePanelId(null); // Reset active panel
         // Remove from localStorage
         localStorage.removeItem('activePanelLayoutId');
         localStorage.removeItem('selectedStory');
@@ -226,6 +280,8 @@ const MangaCreator = () => {
                     panels={panels}
                     onPanelToggle={handlePanelToggle}
                     onAddPanel={addPanel}
+                    activePanelId={activePanelId}
+                    onPanelSelect={(id) => setActivePanelId(id)}
                 />
 
                 <RightSidebar
@@ -237,6 +293,13 @@ const MangaCreator = () => {
                     isRefining={isRefining}
                     onRefinePrompt={handleRefinePrompt}
                     onResetPanels={handleResetPanels}
+                    activePanelId={activePanelId}
+                    selectedCharacters={selectedCharacters}
+                    characters={characters}
+                    panelPrompts={panelPrompts}
+                    setPanelPrompts={setPanelPrompts}
+                    panelCharacters={panelCharacters}
+                    setPanelCharacters={setPanelCharacters}
                 />
             </div>
         </div>

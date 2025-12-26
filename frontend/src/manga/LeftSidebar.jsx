@@ -79,7 +79,16 @@ const LeftSidebar = ({
                             onClick={() => onTemplateSelect(template)}
                         >
                             <svg width="100" height="140" viewBox="0 0 100 140" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                {template.svg}
+                                {template.panels.map((panel, idx) => (
+                                    <rect
+                                        key={idx}
+                                        x={panel.x}
+                                        y={panel.y}
+                                        width={panel.width}
+                                        height={panel.height}
+                                        rx="4"
+                                    />
+                                ))}
                             </svg>
                         </div>
                     ))}

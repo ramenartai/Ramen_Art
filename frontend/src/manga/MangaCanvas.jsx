@@ -1,7 +1,7 @@
 import React from 'react';
 import './css/MangaCanvas.css';
 
-const MangaCanvas = ({ activePanelLayout, panels, onPanelToggle, onAddPanel }) => {
+const MangaCanvas = ({ activePanelLayout, panels, onPanelToggle, onAddPanel, activePanelId, onPanelSelect }) => {
     return (
         <main className="center-area">
             {/* Pages Section */}
@@ -26,16 +26,29 @@ const MangaCanvas = ({ activePanelLayout, panels, onPanelToggle, onAddPanel }) =
             {/* Canvas Area */}
             <div className="canvas-area">
                 {activePanelLayout ? (
-                    <div className="manga-canvas">
-                        <svg
-                            className="panel-layout-svg"
-                            viewBox="0 0 100 140"
-                            preserveAspectRatio="xMidYMid meet"
-                        >
-                            <rect width="100" height="140" fill="#0f1419" />
-                            {activePanelLayout.svg}
-                        </svg>
-                    </div>
+                    <>
+                        <div className="manga-canvas">
+                            <svg
+                                className="panel-layout-svg"
+                                viewBox="0 0 100 140"
+                                preserveAspectRatio="xMidYMid meet"
+                            >
+                                <rect width="100" height="140" fill="#0f1419" />
+                                {activePanelLayout.panels.map((panel, idx) => (
+                                    <rect
+                                        key={panel.id || idx}
+                                        x={panel.x}
+                                        y={panel.y}
+                                        width={panel.width}
+                                        height={panel.height}
+                                        rx="4"
+                                        className={`panel-rect ${activePanelId === panel.id ? 'active' : ''}`}
+                                        onClick={() => onPanelSelect(panel.id)}
+                                    />
+                                ))}
+                            </svg>
+                        </div>
+                    </>
                 ) : (
                     <div className="canvas-placeholder">
                         <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
