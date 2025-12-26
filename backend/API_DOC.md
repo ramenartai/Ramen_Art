@@ -569,6 +569,94 @@ Cookie: access_token=<jwt_token>
 
 ---
 
+## 📖 Manga Generation APIs
+
+**Base Path**: `/api/manga`  
+**Tags**: `Manga`  
+**Authentication**: Required (JWT)
+
+### 1. Suggest Panel Action
+
+**Endpoint**: `POST /api/manga/suggest-action`
+
+**Description**: Suggest what should happen in a manga panel based on story context using Gemini AI.
+
+**Request Body**:
+```json
+{
+  "story_summary": "A hero exploring a dark cave...",
+  "panel_number": 1,
+  "previous_panels": ["Panel 0 description..."],
+  "characters_in_panel": ["Hero Name"]
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "suggested_action": "The hero lights a torch, revealing ancient ruins on the cave walls."
+}
+```
+
+---
+
+### 2. Generate Panel Prompt
+
+**Endpoint**: `POST /api/manga/generate-panel-prompt`
+
+**Description**: Refine a panel action into a detailed prompt optimized for image generation models.
+
+**Request Body**:
+```json
+{
+  "panel_action": "Hero lights a torch in a cave",
+  "characters": ["Hero Name"],
+  "style_notes": "manga style, high contrast"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "optimized_prompt": "Manga illustration, black and white, close up of a hero striking a match to light a wooden torch... intense shadows, dramatic lighting..."
+}
+```
+
+---
+
+### 3. Generate Panel Image
+
+**Endpoint**: `POST /api/manga/generate-panel-image`
+
+**Description**: Generate a high-quality manga panel using Stability AI SDXL with optional character references.
+
+**Request Body**:
+```json
+{
+  "prompt": "Manga illustration, hero lighting torch...",
+  "character_image_urls": ["https://cloudinary.com/char1.jpg"],
+  "width": 768,
+  "height": 1024,
+  "style": "manga"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "image_url": "https://cloudinary.com/manga-panel-abc.jpg",
+  "prompt_used": "Manga illustration, hero lighting torch..."
+}
+```
+
+**Notes**:
+- Uses Stability AI SDXL for generation
+- Supports **Character Consistency** via image-to-image mode (passing `character_image_urls`)
+- Automatically uploads result to **Cloudinary** for permanent storage
+- Returns a safe, permanent CDN URL
+
+---
+
 ## 🔧 Utility Endpoints
 
 ### Health Check
@@ -588,12 +676,29 @@ Cookie: access_token=<jwt_token>
 
 ## 🔒 Authentication & Security
 
-### JWT Configuration
+### Required Environment Variables
 
 ```env
+# Database
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB=ramen_art_db
+
+# JWT Authentication
 JWT_SECRET_KEY=your-secret-key-here
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
+
+# AI APIs (Gemini & Stability)
+GEMINI_API_KEY=your_google_gemini_api_key
+STABILITY_API_KEY=your_stability_ai_api_key
+
+# Image Storage (Cloudinary)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Application
+VITE_BACKEND_URL=http://localhost:8000
 ```
 
 ### Token Structure
@@ -761,4 +866,4 @@ Common HTTP status codes:
 
 ---
 
-**Last Updated**: December 2024
+**Last Updated**: December 26, 2024
