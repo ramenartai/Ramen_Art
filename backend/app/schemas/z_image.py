@@ -13,6 +13,6 @@ class ZImageRequest(BaseModel):
 
 class ZImageResponse(BaseModel):
     image_url: str  # Cloudinary public URL
-    model: str
+    model: str 
     seed_used: Optional[str] = None
     seed: Optional[int] = None

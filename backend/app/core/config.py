@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: Optional[str]
     GOOGLE_REDIRECT_URI: Optional[str]
 
+    # Gemini AI
+    GEMINI_API_KEY: Optional[str] = None
+
     # ================= Z-IMAGE =================
     Z_IMAGE_MODEL: str
     Z_IMAGE_DEFAULT_RESOLUTION: str
