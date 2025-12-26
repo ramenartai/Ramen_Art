@@ -4,16 +4,50 @@ import StoryChatbox from "./storyChatbox";
 import StoryCanvas from "./storyCanvas";
 import "../Css/storyboard.css";
 
-const Storyboard = ({ onClose }) => {
-  const [storyData, setStoryData] = useState(null);
+const Storyboard = ({ onClose, initialStoryData = null }) => {
+  const [storyData, setStoryData] = useState(initialStoryData);
   const [input, setInput] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPinned, setIsPinned] = useState(!!initialStoryData); // Auto-pin if viewing saved story
+  const [isSaving, setIsSaving] = useState(false);
   const chatboxRef = useRef(null);
 
-  const handleGenerate = (e) => {
-    e.preventDefault();
-    // This will be handled by the chatbox, but we can show the input
-    console.log("Generate story:", input);
+  const handleSave = async () => {
+    if (!storyData) {
+      alert('No story to save! Generate a story first.');
+      return;
+    }
+
+    if (isPinned) {
+      alert('Story already saved!');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${BACKEND_URL}/api/story/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(storyData),
+      });
+
+      if (response.ok) {
+        setIsPinned(true);
+        alert('Story saved successfully! ✨');
+      } else {
+        const error = await response.json();
+        alert(`Failed to save story: ${error.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Save failed:', error);
+      alert('Failed to save story. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleFullscreen = () => {
@@ -38,13 +72,20 @@ const Storyboard = ({ onClose }) => {
       <div className={`storyboard-window ${isFullscreen ? 'fullscreen' : ''}`}>
         <div className="storyboard-controls">
           <button
-            className="storyboard-control-btn storyboard-pin"
-            onClick={() => {/* Placeholder for pin functionality */ }}
-            title="Pin"
+            className={`storyboard-control-btn storyboard-pin ${isPinned ? 'pinned' : ''}`}
+            onClick={handleSave}
+            disabled={isSaving || !storyData}
+            title={isPinned ? "Story Saved" : "Save Story"}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
-            </svg>
+            {isSaving ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="spinning">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
+              </svg>
+            )}
           </button>
           <button
             className="storyboard-control-btn storyboard-fullscreen"
@@ -77,13 +118,13 @@ const Storyboard = ({ onClose }) => {
         {/* Main Split Layout */}
         <div className="story-main-split">
           {/* Left: Prompt Reference */}
-          <div className="story-prompt-section">
-            <div className="story-section-header">
-              <h3>Prompt Reference</h3>
-              <span className="story-section-badge">Chat</span>
+            <div className="story-prompt-section">
+              <div className="story-section-header">
+                <h3>Prompt Reference</h3>
+                <span className="story-section-badge">Chat</span>
+              </div>
+              <StoryChatbox ref={chatboxRef} onStoryData={setStoryData} />
             </div>
-            <StoryChatbox ref={chatboxRef} onStoryData={setStoryData} />
-          </div>
 
           {/* Right: Generated Results */}
           <div className="story-results-section">
