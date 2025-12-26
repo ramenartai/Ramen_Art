@@ -281,7 +281,7 @@ const CharGen = () => {
                         </svg>
                         Back
                     </button>
-                    <h1 className="page-title">OC Maker</h1>
+                    <h1 className="page-title">Character Generation</h1>
                 </div>
                 <div className="header-right">
                     <div className="header-actions">

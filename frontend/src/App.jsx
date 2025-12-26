@@ -5,6 +5,8 @@ import CharGen from "./pages/CharGen.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import AIApps from "./pages/AIApps.jsx";
+import MangaCreator from "./pages/MangaCreator.jsx";
 import ProtectedRoute from "./Services/protection.jsx";
 import AuthCallback from "./Components/AuthCallBack.jsx";
 
@@ -21,7 +23,21 @@ const App = () => {
           <ProfilePage />
         </ProtectedRoute>
       } />
-      <Route path="/chargen" element={<CharGen />} />
+      <Route path="/chargen" element={
+        <ProtectedRoute>
+          <CharGen />
+        </ProtectedRoute>
+      } />
+      <Route path="/ai-apps" element={
+        <ProtectedRoute>
+          <AIApps />
+        </ProtectedRoute>
+      } />
+      <Route path="/manga-creator" element={
+        <ProtectedRoute>
+          <MangaCreator />
+        </ProtectedRoute>
+      } />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />

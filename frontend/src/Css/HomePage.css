@@ -282,6 +282,89 @@
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
 }
 
+.manga-card {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(249, 115, 22, 0.1) 100%);
+}
+
+/* Manga Mascot */
+.manga-mascot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.manga-book {
+  width: 120px;
+  height: 140px;
+  position: relative;
+  transform: perspective(600px) rotateY(-15deg);
+  transition: transform 0.4s ease;
+}
+
+.feature-card:hover .manga-book {
+  transform: perspective(600px) rotateY(-5deg) translateY(-10px);
+}
+
+.book-cover {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
+  border-radius: 8px 12px 12px 8px;
+  box-shadow:
+    0 10px 30px rgba(236, 72, 153, 0.4),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.book-cover::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.book-cover::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  clip-path: polygon(0 0, 100% 0, 100% 33%, 66% 33%, 66% 66%, 100% 66%, 100% 100%, 0 100%, 0 66%, 33% 66%, 33% 33%, 0 33%);
+}
+
+.book-pages {
+  position: absolute;
+  right: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 8px;
+  background: linear-gradient(to right, #f0f0f0 0%, #ffffff 50%, #f0f0f0 100%);
+  border-radius: 0 4px 4px 0;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.book-pages::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: repeating-linear-gradient(to bottom,
+      transparent 0px,
+      transparent 3px,
+      rgba(0, 0, 0, 0.05) 3px,
+      rgba(0, 0, 0, 0.05) 4px);
+}
+
 .card-content {
   flex: 1;
   z-index: 2;
@@ -934,9 +1017,39 @@
 }
 
 /* Tools Sidebar */
+/* Tools Sidebar Toggle Button */
+.tools-toggle-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.tools-toggle-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(99, 102, 241, 0.6);
+}
+
+.tools-toggle-btn.open {
+  background: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
+}
+
+/* Tools Sidebar */
 .tools-sidebar {
   position: fixed;
-  right: 0;
+  right: -280px;
   top: 80px;
   width: 280px;
   height: calc(100vh - 80px);
@@ -946,20 +1059,14 @@
   padding: 1.5rem;
   overflow-y: auto;
   z-index: 50;
-  animation: slideInRight 0.6s ease-out;
+  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+.tools-sidebar.open {
+  right: 0;
 }
+
+
 
 .sidebar-title {
   font-size: 1.1rem;
