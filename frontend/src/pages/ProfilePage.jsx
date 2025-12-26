@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Storyboard from '../Story/StoryBoard';
+import Toast from '../Components/Toast';
 import '../Css/ProfilePage.css';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
@@ -9,10 +10,17 @@ const ProfilePage = () => {
     const navigate = useNavigate();
     const [userData, setUserData] = useState(null);
     const [stories, setStories] = useState([]);
+    const [characters, setCharacters] = useState({});
     const [loading, setLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState({ show: false, storyId: null, storyTitle: '' });
+    const [deleteCharModal, setDeleteCharModal] = useState({ show: false, charId: null, charName: '' });
     const [viewingStory, setViewingStory] = useState(null);
     const [loadingStory, setLoadingStory] = useState(false);
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = 'info') => {
+        setToast({ message, type });
+    };
 
     // Fetch user data
     useEffect(() => {
@@ -52,6 +60,32 @@ const ProfilePage = () => {
         fetchStories();
     }, []);
 
+    // Fetch user characters
+    useEffect(() => {
+        const fetchCharacters = async () => {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/character/list`, {
+                    credentials: 'include',
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    // Group characters by story_id
+                    const grouped = data.reduce((acc, char) => {
+                        if (!acc[char.story_id]) {
+                            acc[char.story_id] = [];
+                        }
+                        acc[char.story_id].push(char);
+                        return acc;
+                    }, {});
+                    setCharacters(grouped);
+                }
+            } catch (error) {
+                console.error('Failed to fetch characters:', error);
+            }
+        };
+        fetchCharacters();
+    }, []);
+
     const handleDeleteClick = (storyId, storyTitle) => {
         setDeleteModal({ show: true, storyId, storyTitle });
     };
@@ -68,11 +102,11 @@ const ProfilePage = () => {
                 setStories(stories.filter(story => story.id !== deleteModal.storyId));
                 setDeleteModal({ show: false, storyId: null, storyTitle: '' });
             } else {
-                alert('Failed to delete story');
+                showToast('Failed to delete story', 'error');
             }
         } catch (error) {
             console.error('Delete failed:', error);
-            alert('Failed to delete story');
+            showToast('Failed to delete story', 'error');
         }
     };
 
@@ -91,11 +125,11 @@ const ProfilePage = () => {
                 const storyData = await response.json();
                 setViewingStory(storyData);
             } else {
-                alert('Failed to load story');
+                showToast('Failed to load story', 'error');
             }
         } catch (error) {
             console.error('Failed to fetch story:', error);
-            alert('Failed to load story');
+            showToast('Failed to load story', 'error');
         } finally {
             setLoadingStory(false);
         }
@@ -103,6 +137,45 @@ const ProfilePage = () => {
 
     const handleCloseStory = () => {
         setViewingStory(null);
+    };
+
+    const handleDeleteCharacter = (charId, charName) => {
+        setDeleteCharModal({ show: true, charId, charName });
+    };
+
+    const confirmDeleteCharacter = async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/character/${deleteCharModal.charId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                // Remove character from state
+                setCharacters(prev => {
+                    const newChars = { ...prev };
+                    Object.keys(newChars).forEach(storyId => {
+                        newChars[storyId] = newChars[storyId].filter(
+                            char => char.id !== deleteCharModal.charId
+                        );
+                        if (newChars[storyId].length === 0) {
+                            delete newChars[storyId];
+                        }
+                    });
+                    return newChars;
+                });
+                setDeleteCharModal({ show: false, charId: null, charName: '' });
+            } else {
+                showToast('Failed to delete character', 'error');
+            }
+        } catch (error) {
+            console.error('Delete failed:', error);
+            showToast('Failed to delete character', 'error');
+        }
+    };
+
+    const cancelDeleteCharacter = () => {
+        setDeleteCharModal({ show: false, charId: null, charName: '' });
     };
 
     const formatDate = (dateString) => {

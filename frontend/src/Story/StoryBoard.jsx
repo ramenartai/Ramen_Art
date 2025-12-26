@@ -1,7 +1,7 @@
-// Storyboard.js
 import React, { useState, useRef } from "react";
 import StoryChatbox from "./storyChatbox";
 import StoryCanvas from "./storyCanvas";
+import Toast from "../Components/Toast";
 import "../Css/storyboard.css";
 
 const Storyboard = ({ onClose, initialStoryData = null }) => {
@@ -10,16 +10,21 @@ const Storyboard = ({ onClose, initialStoryData = null }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPinned, setIsPinned] = useState(!!initialStoryData); // Auto-pin if viewing saved story
   const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState(null);
   const chatboxRef = useRef(null);
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
+  };
 
   const handleSave = async () => {
     if (!storyData) {
-      alert('No story to save! Generate a story first.');
+      showToast('No story to save! Generate a story first.', 'warning');
       return;
     }
 
     if (isPinned) {
-      alert('Story already saved!');
+      showToast('Story already saved!', 'info');
       return;
     }
 
@@ -37,14 +42,14 @@ const Storyboard = ({ onClose, initialStoryData = null }) => {
 
       if (response.ok) {
         setIsPinned(true);
-        alert('Story saved successfully! ✨');
+        showToast('Story saved successfully! ✨', 'success');
       } else {
         const error = await response.json();
-        alert(`Failed to save story: ${error.detail || 'Unknown error'}`);
+        showToast(`Failed to save story: ${error.detail || 'Unknown error'}`, 'error');
       }
     } catch (error) {
       console.error('Save failed:', error);
-      alert('Failed to save story. Please try again.');
+      showToast('Failed to save story. Please try again.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -118,13 +123,13 @@ const Storyboard = ({ onClose, initialStoryData = null }) => {
         {/* Main Split Layout */}
         <div className="story-main-split">
           {/* Left: Prompt Reference */}
-            <div className="story-prompt-section">
-              <div className="story-section-header">
-                <h3>Prompt Reference</h3>
-                <span className="story-section-badge">Chat</span>
-              </div>
-              <StoryChatbox ref={chatboxRef} onStoryData={setStoryData} />
+          <div className="story-prompt-section">
+            <div className="story-section-header">
+              <h3>Prompt Reference</h3>
+              <span className="story-section-badge">Chat</span>
             </div>
+            <StoryChatbox ref={chatboxRef} onStoryData={setStoryData} />
+          </div>
 
           {/* Right: Generated Results */}
           <div className="story-results-section">
@@ -162,6 +167,13 @@ const Storyboard = ({ onClose, initialStoryData = null }) => {
           </div>
         </div>
       </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

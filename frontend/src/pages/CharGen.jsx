@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../Components/Toast';
 import '../Css/CharGen.css';
 
 const CharGen = () => {
@@ -11,6 +12,77 @@ const CharGen = () => {
     const [uploadedImages, setUploadedImages] = useState([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedImage, setGeneratedImage] = useState(null);
+
+    // Character management states
+    const [stories, setStories] = useState([]);
+    const [selectedStory, setSelectedStory] = useState('');
+    const [characterName, setCharacterName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const [toast, setToast] = useState(null);
+
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+
+    const showToast = (message, type = 'info') => {
+        setToast({ message, type });
+    };
+
+    // Fetch user stories on mount
+    React.useEffect(() => {
+        const fetchStories = async () => {
+            try {
+                const response = await axios.get(`${BACKEND_URL}/api/story/list`, {
+                    withCredentials: true,
+                });
+                setStories(response.data);
+            } catch (error) {
+                console.error('Failed to fetch stories:', error);
+            }
+        };
+        fetchStories();
+    }, []);
+
+    // Save character function
+    const handleSaveCharacter = async () => {
+        if (!selectedStory) {
+            showToast('Please select a story first!', 'warning');
+            return;
+        }
+        if (!characterName.trim()) {
+            showToast('Please enter a character name!', 'warning');
+            return;
+        }
+        if (!generatedImage) {
+            showToast('Please generate a character image first!', 'warning');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const response = await axios.post(
+                `${BACKEND_URL}/api/character/save`,
+                {
+                    story_id: selectedStory,
+                    character_name: characterName,
+                    image_url: generatedImage,
+                    prompt: getFullPrompt()
+                },
+                { withCredentials: true }
+            );
+
+            if (response.status === 201) {
+                setIsSaved(true);
+                showToast('Character saved successfully! ✨', 'success');
+            }
+        } catch (error) {
+            console.error('Failed to save character:', error);
+            showToast('Failed to save character. Please try again.', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const [activeDropdown, setActiveDropdown] = useState(null);
 
     // Dropdown options based on the images
     const dropdownOptions = {
@@ -59,8 +131,6 @@ const CharGen = () => {
             'Backpack', 'Belt', 'Tie', 'Bow Tie'
         ]
     };
-
-    const [activeDropdown, setActiveDropdown] = useState(null);
 
     const handleDropdownToggle = (category) => {
         setActiveDropdown(activeDropdown === category ? null : category);
@@ -125,7 +195,7 @@ const CharGen = () => {
         const fullPrompt = getFullPrompt();
 
         if (!fullPrompt.trim()) {
-            alert('Please add a description or select some character features!');
+            showToast('Please add a description or select some character features!', 'warning');
             return;
         }
 
@@ -151,7 +221,7 @@ const CharGen = () => {
 
         } catch (error) {
             console.error('Error generating character:', error);
-            alert('Failed to generate character. Please try again.');
+            showToast('Failed to generate character. Please try again.', 'error');
         } finally {
             setIsGenerating(false);
         }
@@ -189,6 +259,35 @@ const CharGen = () => {
                     {/* Left Panel - Character Form */}
                     <div className="form-panel">
                         <div className="form-card">
+                            {/* Story Selection */}
+                            <div className="story-selection-section">
+                                <label className="input-label">Select Story</label>
+                                <select
+                                    className="story-select"
+                                    value={selectedStory}
+                                    onChange={(e) => setSelectedStory(e.target.value)}
+                                >
+                                    <option value="">Choose a story...</option>
+                                    {stories.map((story) => (
+                                        <option key={story.id} value={story.id}>
+                                            {story.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Character Name */}
+                            <div className="character-name-section">
+                                <label className="input-label">Character Name</label>
+                                <input
+                                    type="text"
+                                    className="character-name-input"
+                                    placeholder="Enter character name..."
+                                    value={characterName}
+                                    onChange={(e) => setCharacterName(e.target.value)}
+                                />
+                            </div>
+
                             <div className="card-header">
                                 <h2 className="card-title">Character Appearance</h2>
                                 <button className="inspire-btn" onClick={handleInspireMe}>
@@ -374,11 +473,40 @@ const CharGen = () => {
                                         className="generated-character-image"
                                         style={{
                                             width: '100%',
-                                            height: '100%',
+                                            height: 'auto',
                                             objectFit: 'contain',
                                             borderRadius: '12px'
                                         }}
                                     />
+                                    {/* Save/Pin Button */}
+                                    <button
+                                        className={`save-character-btn ${isSaved ? 'saved' : ''}`}
+                                        onClick={handleSaveCharacter}
+                                        disabled={isSaving || isSaved}
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="spinning">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                                </svg>
+                                                Saving...
+                                            </>
+                                        ) : isSaved ? (
+                                            <>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                                </svg>
+                                                Saved!
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
+                                                </svg>
+                                                Save Character
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="preview-content">
@@ -395,6 +523,13 @@ const CharGen = () => {
                     </div>
                 </div>
             </div>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     );
 };
