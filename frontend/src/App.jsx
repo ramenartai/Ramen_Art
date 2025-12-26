@@ -11,7 +11,11 @@ import AuthCallback from "./Components/AuthCallBack.jsx";
 const App = () => {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <HomePage />
+        </ProtectedRoute>
+      } />
       <Route path="/chargen" element={<CharGen />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />

@@ -1,10 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import User from '../Components/User';
+import Storyboard from '../Story/StoryBoard';
 import '../Css/HomePage.css';
 
 const HomePage = () => {
     const navigate = useNavigate();
     const [activeFilter, setActiveFilter] = useState('All Posts');
+    const [userData, setUserData] = useState(null);
+    const [isStoryboardOpen, setIsStoryboardOpen] = useState(false);
+
+    useEffect(() => {
+        // Fetch user data from localStorage or API
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setUserData(JSON.parse(storedUser));
+        }
+    }, []);
 
     const filters = [
         'All Posts', 'Featured', 'Templates', 'Animation', 'Leaderboard',
@@ -83,15 +95,7 @@ const HomePage = () => {
                     </a>
                 </nav>
                 <div className="header-actions">
-                    <button className="btn-join">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
-                        </svg>
-                        Join Discord
-                    </button>
-                    <div className="user-avatar">
-                        <div className="avatar-circle">U</div>
-                    </div>
+                    <User userData={userData} />
                 </div>
             </header>
 
@@ -295,7 +299,7 @@ const HomePage = () => {
                         </svg>
                         <span className="tool-name">OC Maker</span>
                     </div>
-                    <div className="tool-item">
+                    <div className="tool-item" onClick={() => setIsStoryboardOpen(true)}>
                         <svg className="tool-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M430.1 347.9c-6.6-6.1-16.3-7.6-24.6-9-11.5-1.9-15.9-4-22.6-10-14.3-12.7-14.3-31.1 0-43.8l30.3-26.9c46.4-41 46.4-108.2 0-149.2-34.2-30.1-80.1-45-127.8-45-55.7 0-113.9 20.3-158.8 60.1-83.5 73.8-83.5 194.7 0 268.5 41.5 36.7 97.5 55 152.9 55.4h1.7c55.4 0 110-17.9 148.8-52.4 14.4-12.7 12-36.6.1-47.7zM120 216c0-17.7 14.3-32 32-32s32 14.3 32 32-14.3 32-32 32-32-14.3-32-32zm40 126c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm64-161c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32zm72 219c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm24-208c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z" transform="scale(0.035)" />
                         </svg>
@@ -346,14 +350,12 @@ const HomePage = () => {
                         <span className="tool-name">AI Comic Generator</span>
                     </div>
                 </div>
-                <button className="upgrade-btn">
-                    <svg className="upgrade-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M528 448H112c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h416c8.8 0 16-7.2 16-16v-32c0-8.8-7.2-16-16-16zm64-320c-26.5 0-48 21.5-48 48 0 7.1 1.6 13.7 4.4 19.8L476 239.2c-15.4 9.2-35.3 4-44.2-11.6L350.3 85C361 76.2 368 63 368 48c0-26.5-21.5-48-48-48s-48 21.5-48 48c0 15 7 28.2 17.7 37l-81.5 142.6c-8.9 15.6-28.9 20.8-44.2 11.6l-72.3-43.4c2.7-6 4.4-12.7 4.4-19.8 0-26.5-21.5-48-48-48S0 149.5 0 176s21.5 48 48 48c2.6 0 5.2-.4 7.7-.8L128 416h384l72.3-192.8c2.5.4 5.1.8 7.7.8 26.5 0 48-21.5 48-48s-21.5-48-48-48z" transform="scale(0.035)" />
-                    </svg>
-                    Upgrade now
-                </button>
-                <p className="sidebar-footer">cheerful unicorn 550 Zaps</p>
             </aside>
+
+            {/* Storyboard Modal */}
+            {isStoryboardOpen && (
+                <Storyboard onClose={() => setIsStoryboardOpen(false)} />
+            )}
         </div>
     );
 };
