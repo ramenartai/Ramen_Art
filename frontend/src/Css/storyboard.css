@@ -194,7 +194,10 @@
 /* Main Split Layout */
 .story-main-split {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 38% 1fr;
+  /* Increased chat width from 35% to 45% */
+  gap: 0;
+  /* Ensure no gap */
   height: 100%;
   overflow: hidden;
 }
@@ -886,4 +889,69 @@
   font-size: 1rem;
   color: #f87171;
   font-weight: 700;
+}
+
+/* AI Refine Checkbox - Between Input and Send Button */
+.story-chat-input-bar .ai-refine-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: 8px;
+  font-size: 0.85rem;
+  color: #a78bfa;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.story-chat-input-bar .ai-refine-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #8b5cf6;
+}
+
+.story-chat-input-bar .ai-refine-checkbox span {
+  cursor: pointer;
+}/* Story Chat Refine Button */
+.story-chat-refine-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.story-chat-refine-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.story-chat-refine-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== STORY CANVAS INPUT BAR OVERRIDE ===== */
+.story-chat-input-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px !important;
+}
+
+.story-chat-input {
+  flex: 1 !important;
+  min-height: 44px !important;
+  padding: 12px !important;
 }

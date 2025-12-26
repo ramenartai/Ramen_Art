@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.mongodb import connect_db, close_db
-from app.routes import test, auth, z_image, story, character
+from app.routes import test, auth, z_image, story, character, refine_prompt
 
 app = FastAPI()
 
@@ -34,6 +34,7 @@ app.include_router(auth.router)
 app.include_router(z_image.router)
 app.include_router(story.router)
 app.include_router(character.router)
+app.include_router(refine_prompt.router, prefix="/api")
 
 @app.get("/")
 def root():

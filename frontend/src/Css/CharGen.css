@@ -742,6 +742,7 @@ input:checked+.toggle-slider:before {
         height: 150px;
     }
 }
+
 /* Story Selection & Character Name */
 .story-selection-section,
 .character-name-section {
@@ -814,4 +815,34 @@ input:checked+.toggle-slider:before {
 .save-character-btn.saved {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     border-color: #10b981;
+}
+
+.char-gen-refine-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 8px 16px;
+    min-width: fit-content;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.char-gen-refine-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.char-gen-refine-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

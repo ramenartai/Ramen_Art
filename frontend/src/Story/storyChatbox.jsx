@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import handleSubmit from "./getStory";
+import refinePrompt from "../utils/aiOptimize";
+import Toast from "../Components/Toast";
 
 const MIN_WIDTH = 260;
 const MAX_WIDTH = 480;
@@ -51,8 +53,14 @@ const StoryChatbox = forwardRef(({ onStoryData }, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState(""); // Dynamic loading text
   const [pendingText, setPendingText] = useState("");
+  const [isRefining, setIsRefining] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const contentRef = useRef(null);
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
+  };
 
   // Expose sendMessage method to parent via ref
   useImperativeHandle(ref, () => ({
@@ -152,10 +160,32 @@ const StoryChatbox = forwardRef(({ onStoryData }, ref) => {
     }, 500);
   };
 
-  // Enhanced submit handler
+  // Manual refine handler
+  const handleRefine = async () => {
+    if (!input.trim()) return;
+
+    setIsRefining(true);
+    try {
+      console.log('Refining prompt:', input.trim());
+      const refined = await refinePrompt(input.trim());
+      console.log('Received refined:', refined);
+      console.log('Setting input to:', refined);
+      setInput(refined);
+      console.log('Input state updated');
+      showToast('Prompt refined successfully!', 'success');
+    } catch (error) {
+      console.error('Refinement error:', error);
+      showToast('Failed to refine prompt', 'error');
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
+  // Submit handler - just submit, no automatic refinement
   const onSubmit = async (e) => {
     e.preventDefault();
-    await handleSubmitMessage(input);
+    if (!input.trim() || isLoading) return;
+    await handleSubmitMessage(input.trim());
   };
 
   return (
@@ -203,17 +233,33 @@ const StoryChatbox = forwardRef(({ onStoryData }, ref) => {
           disabled={isLoading}
         />
         <button
+          type="button"
+          className="story-chat-refine-btn"
+          onClick={handleRefine}
+          disabled={isRefining || isLoading || !input.trim()}
+          title="Refine your prompt with AI"
+        >
+          {isRefining ? '✨' : '🎆'}
+        </button>
+        <button
           className="story-chat-send-btn"
           type="submit"
           disabled={isLoading || !input.trim()}
           style={{
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.6 : 1
+            cursor: isLoading || isRefining ? 'not-allowed' : 'pointer',
+            opacity: isLoading || isRefining ? 0.6 : 1
           }}
         >
-          {isLoading ? "⏳" : "✨"}
+          {isLoading || isRefining ? "⏳" : "✨"}
         </button>
       </form>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </aside>
   );
 });
