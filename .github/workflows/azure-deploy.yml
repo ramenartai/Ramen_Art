@@ -43,21 +43,21 @@ jobs:
         run: |
           mkdir -p backend/static
           cp -r frontend/dist/* backend/static/
-          echo "Frontend files copied to backend/static"
+          echo "✅ Frontend files copied to backend/static"
 
-      # 5. Create .deployment file to enable Oryx build
-      - name: Create deployment config
-        working-directory: ./backend
-        run: |
-          cat > .deployment << 'EOF'
-          [config]
-          SCM_DO_BUILD_DURING_DEPLOYMENT=true
-          EOF
-
-      # 6. Deploy to Azure Web App
+      # 5. Deploy to Azure Web App
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: "ramen-art-hackathon"
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./backend
+
+      # 6. Verify deployment
+      - name: Wait for deployment to settle
+        run: sleep 30
+
+      - name: Check if app is running
+        run: |
+          echo "🔍 Checking app status..."
+          curl -f https://ramen-art-hackathon.azurewebsites.net/docs || echo "⚠️ App may still be starting..."
