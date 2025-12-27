@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     # Gemini AI
     GEMINI_API_KEY: Optional[str] = None
 
+    # Weights & Biases (Weave)
+    WANDB_API_KEY: Optional[str] = None
+    WANDB_PROJECT_NAME: Optional[str] = "ramen-art"
+    WANDB_ENTITY: Optional[str] = None  # Your W&B username/team
+
     # Replicate AI (Image Generation)
     REPLICATE_API_TOKEN: Optional[str] = None
 

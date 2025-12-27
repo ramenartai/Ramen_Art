@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from google import genai
 from app.core.config import settings
 from app.utils.auth_utils import get_current_user
+import weave
 
 router = APIRouter(tags=["Refine Prompt"])
 
@@ -17,6 +18,7 @@ class RefinePromptResponse(BaseModel):
     refined_prompt: str
 
 @router.post("/refine-prompt", response_model=RefinePromptResponse)
+@weave.op
 async def refine_prompt(request: RefinePromptRequest, current_user: dict = Depends(get_current_user)):
     """
     Refine a user's prompt using Gemini AI

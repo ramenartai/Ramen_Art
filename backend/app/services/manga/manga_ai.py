@@ -1,12 +1,14 @@
 from google import genai
 from app.core.config import settings
 from typing import List, Optional
+import weave
 
 # Configure Gemini API from settings
 if settings.GEMINI_API_KEY:
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 
+@weave.op
 async def suggest_panel_action(
     story_summary: str,
     panel_number: int,
@@ -56,6 +58,7 @@ Provide ONLY the panel description, nothing else."""
     return response.text.strip()
 
 
+@weave.op
 async def generate_panel_prompt(
     panel_action: str,
     characters: Optional[List[str]] = None,
