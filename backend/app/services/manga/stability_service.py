@@ -4,6 +4,8 @@ from typing import Optional, List
 from app.core.config import settings
 import tempfile
 import os
+from google import genai
+from google.genai import types
 
 
 async def generate_manga_panel_stability(
@@ -14,12 +16,7 @@ async def generate_manga_panel_stability(
     style: str = "manga"
 ) -> str:
     """
-    Generate a manga panel using Stability AI's SDXL with optional character references.
-    
-    Stability AI supports:
-    - Image-to-image generation (character references!)
-    - High quality SDXL model
-    - Control over style and parameters
+    Generate a manga panel using Gemini's gemini-2.5-flash-image model with optional character references.
     
     Args:
         prompt: Text description
@@ -31,104 +28,110 @@ async def generate_manga_panel_stability(
     Returns:
         Cloudinary URL of the generated image
     """
-    if not settings.STABILITY_API_KEY:
-        raise ValueError("Stability API key not configured. Add STABILITY_API_KEY to .env")
+    if not settings.GEMINI_IMAGE_API_KEY:
+        raise ValueError("Gemini Image API key not configured. Add GEMINI_IMAGE_API_KEY to .env")
+    
+    # Initialize Gemini client
+    client = genai.Client(api_key=settings.GEMINI_IMAGE_API_KEY)
     
     # Enhance prompt for manga style
     if style == "manga":
-        enhanced_prompt = f"{prompt}, manga art style, black and white, high contrast, clean lines, professional manga illustration, monochrome, detailed linework"
-        negative_prompt = "color, photograph, realistic, 3d render, blurry, low quality, watermark, text"
+        enhanced_prompt = f"""Create a manga panel illustration with the following scene:
+
+{prompt}
+
+Style requirements:
+- Black and white manga art style
+- High contrast with clean lines
+- Professional manga illustration quality
+- Monochrome with detailed linework
+- Dynamic composition suitable for manga panels
+- No color, pure black and white manga aesthetic"""
     else:
         enhanced_prompt = prompt
-        negative_prompt = "blurry, low quality, watermark"
-    
-    # Stability AI API endpoint
-    # If character reference provided, use image-to-image (sketch-to-image)
-    # Otherwise use text-to-image
-    
-    if character_image_urls and len(character_image_urls) > 0:
-        # Use image-to-image with character reference
-        api_url = "https://api.stability.ai/v2beta/stable-image/generate/sd3"
-        
-        # Download character reference image
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            char_response = await client.get(character_image_urls[0])
-            if char_response.status_code != 200:
-                raise Exception(f"Failed to download character reference: {char_response.status_code}")
-            
-            character_image_data = char_response.content
-        
-        # Prepare multipart form data
-        files = {
-            "image": ("character.png", character_image_data, "image/png"),
-        }
-        
-        data = {
-            "prompt": enhanced_prompt,
-            "negative_prompt": negative_prompt,
-            "mode": "image-to-image",
-            "strength": 0.6,  # How much to transform the reference (0-1)
-            "output_format": "png"
-        }
-        
-    else:
-        # Use text-to-image
-        api_url = "https://api.stability.ai/v2beta/stable-image/generate/sd3"
-        
-        files = None
-        data = {
-            "prompt": enhanced_prompt,
-            "negative_prompt": negative_prompt,
-            "aspect_ratio": f"{width}:{height}",
-            "mode": "text-to-image",
-            "output_format": "png"
-        }
-    
-    headers = {
-        "Authorization": f"Bearer {settings.STABILITY_API_KEY}",
-        "Accept": "image/*"
-    }
     
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            if files:
-                response = await client.post(
-                    api_url,
-                    headers=headers,
-                    files=files,
-                    data=data
+        # If character reference images provided, download and include them
+        reference_images = []
+        if character_image_urls and len(character_image_urls) > 0:
+            async with httpx.AsyncClient(timeout=60.0) as http_client:
+                for url in character_image_urls[:3]:  # Limit to 3 references
+                    try:
+                        char_response = await http_client.get(url)
+                        if char_response.status_code == 200:
+                            # Convert to base64 for Gemini
+                            image_data = base64.b64encode(char_response.content).decode('utf-8')
+                            reference_images.append({
+                                "data": image_data,
+                                "mime_type": "image/png"
+                            })
+                    except Exception as e:
+                        print(f"Failed to download reference image: {e}")
+                        continue
+            
+            # Add character reference context to prompt
+            if reference_images:
+                enhanced_prompt = f"""Use the provided character reference image(s) as visual guides for the characters in this manga panel.
+
+{enhanced_prompt}
+
+Important: Maintain the character designs from the reference images while adapting them to the manga art style."""
+        
+        # Build contents for Gemini
+        contents = []
+        
+        # Add reference images if available
+        for ref_img in reference_images:
+            contents.append(
+                types.Part.from_bytes(
+                    data=base64.b64decode(ref_img["data"]),
+                    mime_type=ref_img["mime_type"]
                 )
-            else:
-                response = await client.post(
-                    api_url,
-                    headers=headers,
-                    data=data
-                )
+            )
+        
+        # Add the text prompt
+        contents.append(enhanced_prompt)
+        
+        # Generate image using Gemini
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-image",
+            contents=contents,
+            config=types.GenerateContentConfig(
+                response_modalities=['Text', 'Image']
+            )
+        )
+        
+        # Extract generated image from response
+        image_data = None
+        if response.candidates and response.candidates[0].content.parts:
+            for part in response.candidates[0].content.parts:
+                if part.inline_data is not None:
+                    image_data = part.inline_data.data
+                    break
+        
+        if not image_data:
+            raise Exception("No image generated in Gemini response")
+        
+        # Save image temporarily
+        from app.services.cloudinary.service import upload_image_to_cloudinary
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
+            temp_file.write(image_data)
+            temp_path = temp_file.name
+        
+        try:
+            # Upload to Cloudinary
+            cloudinary_url = upload_image_to_cloudinary(
+                temp_path,
+                folder="manga-panels"
+            )
             
-            if response.status_code != 200:
-                error_detail = response.text
-                raise Exception(f"Stability AI error {response.status_code}: {error_detail}")
+            return cloudinary_url
             
-            # Save image temporarily
-            from app.services.cloudinary.service import upload_image_to_cloudinary
-            
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
-                temp_file.write(response.content)
-                temp_path = temp_file.name
-            
-            try:
-                # Upload to Cloudinary
-                cloudinary_url = upload_image_to_cloudinary(
-                    temp_path,
-                    folder="manga-panels"
-                )
+        finally:
+            # Clean up
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
                 
-                return cloudinary_url
-                
-            finally:
-                # Clean up
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
-                    
     except Exception as e:
-        raise Exception(f"Stability AI generation failed: {str(e)}")
+        raise Exception(f"Gemini image generation failed: {str(e)}")

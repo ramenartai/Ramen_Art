@@ -29,7 +29,51 @@ const CharGen = () => {
     const [isLoadingCharacters, setIsLoadingCharacters] = useState(false);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    const handleInspireMe = () => {
+        const inspirations = [
+            `black and white manga character reference sheet of ONE character,
+same character repeated multiple times with identical face and proportions,
+high facial consistency, same eye shape, same nose, same mouth, same jawline,
 
+full body front view, side view, back view,
+neutral standing pose, natural posture,
+
+character expressions included:
+neutral expression,
+happy smile,
+serious expression,
+angry expression,
+surprised expression,
+
+classic manga design sheet layout,
+clean manga lineart, monochrome only,
+thin precise ink outlines,
+soft grayscale shading, light screentone,
+no color,
+
+Japanese manga illustration style,
+hand-drawn sketchbook aesthetic,
+
+MINIMAL character annotations included:
+small handwritten-style notes near character parts,
+short manga-style labels for outfit, personality, abilities,
+rough arrows pointing to gloves, boots, hair, or clothing,
+Japanese manga concept art notes style,
+notes are minimal and secondary, not covering the character,
+
+consistent hairstyle across all views,
+anime-style facial features, realistic anime proportions,
+
+white or off-white paper background,
+professional manga model sheet,
+editorial manga draft quality,
+high resolution, sharp ink details
+
+`
+        ];
+        const randomInspiration = inspirations[Math.floor(Math.random() * inspirations.length)];
+        setDescription(randomInspiration);
+    };
     const showToast = (message, type = 'info') => {
         setToast({ message, type });
     };
@@ -124,7 +168,7 @@ const CharGen = () => {
     // Dropdown options based on the images
     const dropdownOptions = {
         gender: ['Female', 'Male', 'Non-binary'],
-        style: ['Anime', 'Manga', 'Realistic', 'Chibi', 'Semi-realistic'],
+        style: ['Manga (black and white)'],
         age: ['Child', 'Teen', 'Young Adult', 'Adult', 'Elder'],
         body: ['Slim', 'Athletic', 'Muscular', 'Curvy', 'Average', 'Petite'],
         hair: [
@@ -331,8 +375,15 @@ const CharGen = () => {
                             </div>
 
                             {/* Character Name & Import */}
-                            <div className="character-name-section">
-                                <label className="input-label">Character Name / Select OC</label>
+                            <div className="character-name-section"><div className="card-header">
+                                <h2 className="card-title">Character Appearance</h2>
+                                <button className="inspire-btn" onClick={handleInspireMe}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                    </svg>
+                                    Inspire me
+                                </button>
+                            </div>
                                 <div className="name-input-wrapper" style={{ display: 'flex', gap: '10px' }}>
                                     <input
                                         type="text"

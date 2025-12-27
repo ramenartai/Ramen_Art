@@ -28,6 +28,7 @@ const MangaCreator = () => {
     const [activePageId, setActivePageId] = useState(1);
 
     const [prompt, setPrompt] = useState('');
+    const [refinedStoryText, setRefinedStoryText] = useState(''); // Stores AI-refined story text
     const [isRefining, setIsRefining] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
     const [isPinned, setIsPinned] = useState(false);
@@ -288,9 +289,74 @@ const MangaCreator = () => {
         }
     };
 
-    const handleChapterSelect = (chapterId) => {
+    const handleChapterSelect = async (chapterId) => {
         setSelectedChapter(chapterId);
         localStorage.setItem('selectedChapter', chapterId);
+
+        // Fetch full story and build comprehensive prompt
+        if (chapterId && selectedStory && selectedArc) {
+            try {
+                const response = await axios.get(
+                    `${BACKEND_URL}/api/story/${selectedStory}`,
+                    { withCredentials: true }
+                );
+
+                if (response.data) {
+                    const story = response.data;
+                    const arc = story.story_arcs?.find(a => a.arc_id === selectedArc);
+                    const chapter = arc?.chapters?.find(c => c.chapter_id === chapterId);
+
+                    // Build comprehensive story prompt
+                    let fullPrompt = '';
+
+                    // Story title and metadata
+                    fullPrompt += `Story: ${story.story_metadata?.title || 'Untitled'}\n`;
+                    fullPrompt += `Genre: ${story.story_metadata?.genre?.join(', ') || 'N/A'}\n`;
+                    fullPrompt += `Tone: ${story.story_metadata?.tone || 'N/A'}\n\n`;
+
+                    // World building
+                    if (story.world_building) {
+                        fullPrompt += `Setting: ${story.world_building.setting || 'N/A'}\n`;
+                        fullPrompt += `Time Period: ${story.world_building.time_period || 'N/A'}\n\n`;
+                    }
+
+                    // Arc info
+                    if (arc) {
+                        fullPrompt += `Arc: ${arc.arc_title}\n`;
+                        fullPrompt += `Arc Summary: ${arc.arc_summary}\n\n`;
+                    }
+
+                    // Chapter info
+                    if (chapter) {
+                        fullPrompt += `Chapter: ${chapter.chapter_title}\n`;
+                        fullPrompt += `Chapter Purpose: ${chapter.chapter_purpose}\n\n`;
+
+                        // Scene summaries
+                        if (chapter.scenes && chapter.scenes.length > 0) {
+                            fullPrompt += `Scenes:\n`;
+                            chapter.scenes.forEach((scene, idx) => {
+                                fullPrompt += `${idx + 1}. ${scene.scene_summary}\n`;
+                                fullPrompt += `   Setting: ${scene.setting}\n`;
+                                fullPrompt += `   Emotional Beat: ${scene.emotional_beat}\n`;
+                            });
+                        }
+                    }
+
+                    setPrompt(fullPrompt.trim());
+                    localStorage.setItem('mangaPrompt', fullPrompt.trim());
+                    setRefinedStoryText('');
+                }
+            } catch (error) {
+                console.error('Failed to fetch full story:', error);
+                // Fallback to chapter purpose
+                const selectedChapterData = chapters.find(c => c.chapter_id === chapterId);
+                if (selectedChapterData?.chapter_purpose) {
+                    setPrompt(selectedChapterData.chapter_purpose);
+                    localStorage.setItem('mangaPrompt', selectedChapterData.chapter_purpose);
+                    setRefinedStoryText('');
+                }
+            }
+        }
     };
 
     const handleCharacterToggle = (characterId) => {
@@ -399,8 +465,9 @@ const MangaCreator = () => {
         setIsRefining(true);
         try {
             const refined = await refinePrompt(prompt);
-            setPrompt(refined);
-            localStorage.setItem('mangaPrompt', refined);
+            // Store refined text separately instead of replacing original
+            setRefinedStoryText(refined);
+            localStorage.setItem('refinedStoryText', refined);
         } catch (error) {
             console.error('Failed to refine prompt:', error);
         } finally {
@@ -439,6 +506,26 @@ const MangaCreator = () => {
         localStorage.removeItem('mangaPages');
         setPages([{ id: 1, panels: [] }]);
         setActivePageId(1);
+    };
+
+    // Update a specific panel's image
+    const handlePanelImageUpdate = (panelId, imageUrl) => {
+        setPages(prev => prev.map(page => {
+            if (page.id === activePageId) {
+                // Update the panel's image in the current page
+                const updatedPanels = (page.panels || []).map(panel => {
+                    if (panel.id === panelId) {
+                        return { ...panel, imageUrl };
+                    }
+                    return panel;
+                });
+                return { ...page, panels: updatedPanels };
+            }
+            return page;
+        }));
+
+        // Also save to localStorage
+        localStorage.setItem('mangaPages', JSON.stringify(pages));
     };
 
     return (
@@ -510,6 +597,7 @@ const MangaCreator = () => {
                         onRedo={redo}
                         canUndo={history.past.length > 0}
                         canRedo={history.future.length > 0}
+                        panelImages={activePage?.panels || []}
                     />
                 </div>
 
@@ -526,10 +614,12 @@ const MangaCreator = () => {
                             setPrompt(value);
                             localStorage.setItem('mangaPrompt', value);
                         }}
+                        refinedStoryText={refinedStoryText}
                         isRefining={isRefining}
                         onRefinePrompt={handleRefinePrompt}
                         onResetPanels={handleResetPanels}
                         activePanelId={activePanelId}
+                        selectedStory={selectedStory}
                         selectedCharacters={selectedCharacters}
                         characters={characters}
                         panelPrompts={panelPrompts}
@@ -539,6 +629,7 @@ const MangaCreator = () => {
                         pages={pages}
                         activePageId={activePageId}
                         onPageSelect={handlePageSelect}
+                        onPanelImageUpdate={handlePanelImageUpdate}
                     />
                 </div>
             </div>

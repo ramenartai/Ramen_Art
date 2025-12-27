@@ -16,9 +16,17 @@ const MangaCanvas = ({
     onUndo,
     onRedo,
     canUndo,
-    canRedo
+    canRedo,
+    panelImages = []
 }) => {
     const canvasRef = useRef(null);
+
+    // Helper to get image URL for a panel
+    const getPanelImage = (panelId) => {
+        const panel = panelImages.find(p => p.id === panelId);
+        return panel?.imageUrl;
+    };
+
     return (
         <main className="center-area">
             {/* Canvas Area */}
@@ -31,17 +39,51 @@ const MangaCanvas = ({
                                 viewBox="0 0 100 140"
                                 preserveAspectRatio="xMidYMid meet"
                             >
-                                {activePanelLayout.panels.map((panel, idx) => (
-                                    <rect
-                                        key={panel.id || idx}
-                                        x={panel.x}
-                                        y={panel.y}
-                                        width={panel.width}
-                                        height={panel.height}
-                                        className={`panel-rect ${activePanelId === panel.id ? 'active' : ''}`}
-                                        onClick={() => onPanelSelect(panel.id)}
-                                    />
-                                ))}
+                                {/* Define clip paths for each panel */}
+                                <defs>
+                                    {activePanelLayout.panels.map((panel, idx) => (
+                                        <clipPath key={`clip-${panel.id || idx}`} id={`panel-clip-${panel.id || idx}`}>
+                                            <rect
+                                                x={panel.x}
+                                                y={panel.y}
+                                                width={panel.width}
+                                                height={panel.height}
+                                            />
+                                        </clipPath>
+                                    ))}
+                                </defs>
+
+                                {activePanelLayout.panels.map((panel, idx) => {
+                                    const imageUrl = getPanelImage(panel.id);
+                                    return (
+                                        <g key={panel.id || idx}>
+                                            {/* Panel background rect */}
+                                            <rect
+                                                x={panel.x}
+                                                y={panel.y}
+                                                width={panel.width}
+                                                height={panel.height}
+                                                className={`panel-rect ${activePanelId === panel.id ? 'active' : ''}`}
+                                                onClick={() => onPanelSelect(panel.id)}
+                                            />
+
+                                            {/* Panel image if available */}
+                                            {imageUrl && (
+                                                <image
+                                                    href={imageUrl}
+                                                    x={panel.x}
+                                                    y={panel.y}
+                                                    width={panel.width}
+                                                    height={panel.height}
+                                                    preserveAspectRatio="xMidYMid slice"
+                                                    clipPath={`url(#panel-clip-${panel.id || idx})`}
+                                                    onClick={() => onPanelSelect(panel.id)}
+                                                    style={{ cursor: 'pointer' }}
+                                                />
+                                            )}
+                                        </g>
+                                    );
+                                })}
                             </svg>
 
                             {/* Canvas Elements Overlay */}
@@ -84,3 +126,4 @@ const MangaCanvas = ({
 };
 
 export default MangaCanvas;
+

@@ -49,7 +49,7 @@ Provide ONLY the panel description, nothing else."""
     
     # Generate suggestion
     response = client.models.generate_content(
-        model='models/gemini-2.5-flash',
+        model='models/gemini-3-flash-preview',
         contents=f"{system_instruction}\n\n{context}\n\nSuggest what happens in Panel {panel_number}:"
     )
     
@@ -98,7 +98,7 @@ Provide ONLY the optimized prompt, nothing else."""
     
     # Generate optimized prompt
     response = client.models.generate_content(
-        model='models/gemini-2.5-flash',
+        model='models/gemini-3-flash-preview',
         contents=f"{system_instruction}\n\n{context}\n\nOptimized prompt:"
     )
     

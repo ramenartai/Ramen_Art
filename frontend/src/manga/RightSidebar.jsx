@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import './css/RightSidebar.css';
+import { mangaApi } from '../api/mangaApi';
 
 const RightSidebar = ({
     prompt,
     onPromptChange,
+    refinedStoryText,
     isRefining,
     onRefinePrompt,
     onResetPanels,
     activePanelId,
+    selectedStory,
     selectedCharacters,
     characters,
     panelPrompts,
@@ -16,9 +19,21 @@ const RightSidebar = ({
     setPanelCharacters,
     pages,
     activePageId,
-    onPageSelect
+    onPageSelect,
+    onPanelImageUpdate
 }) => {
     const [activeTab, setActiveTab] = useState('prompt'); // 'prompt' or 'page'
+
+    // Manga generation workflow state
+    const [generationStep, setGenerationStep] = useState(null); // null, 'suggesting', 'optimizing', 'generating', 'complete', 'error'
+    const [generationProgress, setGenerationProgress] = useState('');
+    const [apiError, setApiError] = useState(null);
+
+    // Page generation workflow state
+    const [pageGenerationStep, setPageGenerationStep] = useState(null); // null, 'fetching', 'optimizing', 'generating', 'complete', 'error'
+    const [pageGenerationProgress, setPageGenerationProgress] = useState('');
+    const [pageApiError, setPageApiError] = useState(null);
+    const [generatedPageImage, setGeneratedPageImage] = useState(null);
 
     // Helper to get selected character objects
     const availableCharacters = characters.filter(c => selectedCharacters.includes(c.id));
@@ -41,6 +56,144 @@ const RightSidebar = ({
                 [activePanelId]: updated
             };
         });
+    };
+
+    // Helper functions for character data
+    const getSelectedCharacterNames = () => {
+        const selectedIds = panelCharacters[activePanelId] || [];
+        return availableCharacters
+            .filter(char => selectedIds.includes(char.id))
+            .map(char => char.character_name);
+    };
+
+    const getSelectedCharacterImageUrls = () => {
+        const selectedIds = panelCharacters[activePanelId] || [];
+        return availableCharacters
+            .filter(char => selectedIds.includes(char.id))
+            .map(char => char.image_url)
+            .filter(Boolean); // Remove null/undefined URLs
+    };
+
+    // Automated three-step manga panel generation workflow
+    const handleGeneratePanel = async () => {
+        try {
+            setApiError(null);
+
+            // Step 1: Suggest Action
+            setGenerationStep('suggesting');
+            setGenerationProgress('AI is suggesting panel action...');
+
+            const suggestionResponse = await mangaApi.suggestAction({
+                story_summary: refinedStoryText, // Use refined story text
+                panel_number: activePanelId,
+                previous_panels: Object.values(panelPrompts).filter(Boolean),
+                characters_in_panel: getSelectedCharacterNames()
+            });
+
+            // Update panel action with AI suggestion
+            setPanelPrompts(prev => ({
+                ...prev,
+                [activePanelId]: suggestionResponse.suggested_action
+            }));
+
+            // Step 2: Generate Optimized Prompt
+            setGenerationStep('optimizing');
+            setGenerationProgress('Optimizing prompt for image generation...');
+
+            const promptResponse = await mangaApi.generatePanelPrompt({
+                panel_action: suggestionResponse.suggested_action,
+                characters: getSelectedCharacterNames(),
+                style_notes: "manga style, black and white"
+            });
+
+            // Step 3: Generate Panel Image
+            setGenerationStep('generating');
+            setGenerationProgress('Generating manga panel image...');
+
+            const imageResponse = await mangaApi.generatePanelImage({
+                prompt: promptResponse.optimized_prompt,
+                character_image_urls: getSelectedCharacterImageUrls(),
+                width: 768,
+                height: 1024,
+                style: "manga"
+            });
+
+            setGenerationStep('complete');
+            setGenerationProgress('Panel generated successfully!');
+
+            // Update panel with generated image
+            if (onPanelImageUpdate && imageResponse.image_url) {
+                onPanelImageUpdate(activePanelId, imageResponse.image_url);
+            }
+            console.log('Generated image URL:', imageResponse.image_url);
+            console.log('Prompt used:', imageResponse.prompt_used);
+
+        } catch (error) {
+            setGenerationStep('error');
+            setApiError(error.message);
+            console.error('Generation error:', error);
+        }
+    };
+
+    // Handle Generate Page - fetches character images and generates full page
+    const handleGeneratePage = async () => {
+        const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
+        try {
+            setPageApiError(null);
+            setGeneratedPageImage(null);
+
+            // Step 1: Fetch character images by story
+            setPageGenerationStep('fetching');
+            setPageGenerationProgress('Fetching character reference images...');
+
+            let characterImageUrls = [];
+            if (selectedStory) {
+                const response = await fetch(`${BASE_URL}/api/character/by-story/${selectedStory}`, {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const charactersData = await response.json();
+                    characterImageUrls = charactersData
+                        .map(char => char.image_url)
+                        .filter(Boolean);
+                }
+            }
+
+            // Step 2: Generate optimized prompt for page
+            setPageGenerationStep('optimizing');
+            setPageGenerationProgress('Optimizing prompt for image generation...');
+
+            const promptResponse = await mangaApi.generatePanelPrompt({
+                panel_action: refinedStoryText,
+                characters: characters.filter(c => selectedCharacters.includes(c.id)).map(c => c.character_name),
+                style_notes: "manga style, black and white, full manga page layout"
+            });
+
+            // Step 3: Generate page image
+            setPageGenerationStep('generating');
+            setPageGenerationProgress('Generating manga page image...');
+
+            const imageResponse = await mangaApi.generatePanelImage({
+                prompt: promptResponse.optimized_prompt,
+                character_image_urls: characterImageUrls,
+                width: 768,
+                height: 1024,
+                style: "manga"
+            });
+
+            setPageGenerationStep('complete');
+            setPageGenerationProgress('Page generated successfully!');
+            setGeneratedPageImage(imageResponse.image_url);
+
+            console.log('Generated page image URL:', imageResponse.image_url);
+            console.log('Prompt used:', imageResponse.prompt_used);
+
+        } catch (error) {
+            setPageGenerationStep('error');
+            setPageApiError(error.message);
+            console.error('Page generation error:', error);
+        }
     };
 
     if (activePanelId) {
@@ -73,18 +226,65 @@ const RightSidebar = ({
                         <label className="prompt-label">Panel Action</label>
                         <textarea
                             className="prompt-textarea"
-                            placeholder="Describe what happens in this specific panel... (e.g. 'Close up of Hero eyes widening in shock')"
+                            placeholder="AI will suggest what happens in this panel based on your story..."
                             value={panelPrompts[activePanelId] || ''}
                             onChange={handlePanelPromptChange}
                             rows="4"
+                            readOnly={generationStep && generationStep !== 'complete' && generationStep !== 'error'}
                         />
-                        <button className="refine-prompt-btn" disabled>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                            </svg>
-                            Suggest Action
-                        </button>
                     </div>
+
+                    {/* Progress Indicator */}
+                    {generationStep && generationStep !== 'complete' && (
+                        <div className="generation-progress">
+                            <div className="progress-steps">
+                                <div className={`progress-step ${generationStep === 'suggesting' || generationStep === 'optimizing' || generationStep === 'generating' ? 'active' : ''} ${generationStep === 'optimizing' || generationStep === 'generating' ? 'complete' : ''}`}>
+                                    <span className="step-number">1</span>
+                                    <span className="step-label">Suggest</span>
+                                </div>
+                                <div className="progress-line"></div>
+                                <div className={`progress-step ${generationStep === 'optimizing' || generationStep === 'generating' ? 'active' : ''} ${generationStep === 'generating' ? 'complete' : ''}`}>
+                                    <span className="step-number">2</span>
+                                    <span className="step-label">Optimize</span>
+                                </div>
+                                <div className="progress-line"></div>
+                                <div className={`progress-step ${generationStep === 'generating' ? 'active' : ''}`}>
+                                    <span className="step-number">3</span>
+                                    <span className="step-label">Generate</span>
+                                </div>
+                            </div>
+                            <p className="progress-message">{generationProgress}</p>
+                        </div>
+                    )}
+
+                    {/* Success Message */}
+                    {generationStep === 'complete' && (
+                        <div className="generation-success">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                            </svg>
+                            <span>{generationProgress}</span>
+                        </div>
+                    )}
+
+                    {/* Error Message */}
+                    {apiError && (
+                        <div className="generation-error">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                            </svg>
+                            <span>{apiError}</span>
+                            <button
+                                className="retry-btn"
+                                onClick={() => {
+                                    setApiError(null);
+                                    setGenerationStep(null);
+                                }}
+                            >
+                                Retry
+                            </button>
+                        </div>
+                    )}
 
                     {/* Character Selector for Panel */}
                     <div className="settings-section">
@@ -118,11 +318,26 @@ const RightSidebar = ({
                         </div>
                     </div>
 
-                    <button className="generate-btn">
-                        <span>Generate Panel</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
+                    <button
+                        className="generate-btn"
+                        onClick={handleGeneratePanel}
+                        disabled={!refinedStoryText.trim() || (generationStep && generationStep !== 'complete' && generationStep !== 'error')}
+                    >
+                        {generationStep && generationStep !== 'complete' && generationStep !== 'error' ? (
+                            <>
+                                <svg className="spinning" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                </svg>
+                                <span>Generating...</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>Generate Panel</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                            </>
+                        )}
                     </button>
                 </div>
             </aside>
@@ -162,10 +377,11 @@ const RightSidebar = ({
                             <label className="prompt-label">Scene Description</label>
                             <textarea
                                 className="prompt-textarea"
-                                placeholder="Describe the manga scene... (e.g., 'A warrior stands on a cliff overlooking a vast battlefield at sunset')"
+                                placeholder="Story text will appear here when you select a chapter..."
                                 value={prompt}
                                 onChange={(e) => onPromptChange(e.target.value)}
                                 rows="4"
+                                readOnly
                             />
                             <button
                                 className="refine-prompt-btn"
@@ -190,23 +406,17 @@ const RightSidebar = ({
                             </button>
                         </div>
 
+                        {/* Refined Story Text Section */}
+                        {refinedStoryText && (
+                            <div className="refined-text-section">
+                                <label className="prompt-label">AI-Refined Story Context</label>
+                                <div className="refined-text-display">
+                                    {refinedStoryText}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="settings-section">
-                            <div className="setting-item">
-                                <label>Continue from Previous</label>
-                                <div className="toggle-switch">
-                                    <input type="checkbox" id="continue-toggle" />
-                                    <label htmlFor="continue-toggle"></label>
-                                </div>
-                            </div>
-
-                            <div className="setting-item">
-                                <label>Page Generation</label>
-                                <div className="preset-selector">
-                                    <div className="preset-avatar"></div>
-                                    <span>Manga Style (Dev)</span>
-                                </div>
-                            </div>
-
                             <div className="setting-item">
                                 <label>Panel Arrangement</label>
                                 <button className="reset-btn" onClick={onResetPanels}>
@@ -221,9 +431,81 @@ const RightSidebar = ({
                             </div>
                         </div>
 
-                        <button className="generate-btn" disabled>
-                            <span>Generate Page</span>
-                            <span className="page-number-badge">#40</span>
+                        {/* Page Generation Progress */}
+                        {pageGenerationStep && pageGenerationStep !== 'complete' && pageGenerationStep !== 'error' && (
+                            <div className="generation-progress">
+                                <div className="progress-steps">
+                                    <div className={`progress-step ${pageGenerationStep === 'fetching' || pageGenerationStep === 'optimizing' || pageGenerationStep === 'generating' ? 'active' : ''} ${pageGenerationStep === 'optimizing' || pageGenerationStep === 'generating' ? 'complete' : ''}`}>
+                                        <span className="step-number">1</span>
+                                        <span className="step-label">Fetch</span>
+                                    </div>
+                                    <div className="progress-line"></div>
+                                    <div className={`progress-step ${pageGenerationStep === 'optimizing' || pageGenerationStep === 'generating' ? 'active' : ''} ${pageGenerationStep === 'generating' ? 'complete' : ''}`}>
+                                        <span className="step-number">2</span>
+                                        <span className="step-label">Optimize</span>
+                                    </div>
+                                    <div className="progress-line"></div>
+                                    <div className={`progress-step ${pageGenerationStep === 'generating' ? 'active' : ''}`}>
+                                        <span className="step-number">3</span>
+                                        <span className="step-label">Generate</span>
+                                    </div>
+                                </div>
+                                <p className="progress-message">{pageGenerationProgress}</p>
+                            </div>
+                        )}
+
+                        {/* Page Generation Success */}
+                        {pageGenerationStep === 'complete' && (
+                            <div className="generation-success">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                </svg>
+                                <span>{pageGenerationProgress}</span>
+                            </div>
+                        )}
+
+                        {/* Page Generation Error */}
+                        {pageApiError && (
+                            <div className="generation-error">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                                </svg>
+                                <span>{pageApiError}</span>
+                                <button
+                                    className="retry-btn"
+                                    onClick={() => {
+                                        setPageApiError(null);
+                                        setPageGenerationStep(null);
+                                    }}
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Generated Page Image Preview */}
+                        {generatedPageImage && (
+                            <div className="generated-image-preview">
+                                <label className="prompt-label">Generated Page</label>
+                                <img src={generatedPageImage} alt="Generated manga page" />
+                            </div>
+                        )}
+
+                        <button
+                            className="generate-btn"
+                            onClick={handleGeneratePage}
+                            disabled={!refinedStoryText || (pageGenerationStep && pageGenerationStep !== 'complete' && pageGenerationStep !== 'error')}
+                        >
+                            {pageGenerationStep && pageGenerationStep !== 'complete' && pageGenerationStep !== 'error' ? (
+                                <>
+                                    <svg className="spinning" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                    </svg>
+                                    <span>Generating...</span>
+                                </>
+                            ) : (
+                                <span>Generate Page</span>
+                            )}
                         </button>
                     </>
                 ) : (

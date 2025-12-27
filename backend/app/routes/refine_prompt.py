@@ -38,7 +38,7 @@ Provide only the refined prompt, nothing else."""
         
         # Generate refined prompt using new API
         response = client.models.generate_content(
-            model='models/gemini-2.5-flash',
+            model='models/gemini-3-flash-preview',
             contents=f"{system_instruction}\n\nOriginal prompt: {request.prompt}"
         )
         

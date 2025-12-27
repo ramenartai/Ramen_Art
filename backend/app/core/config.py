@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # Gemini AI
     GEMINI_API_KEY: Optional[str] = None
-
+    GEMINI_IMAGE_API_KEY: Optional[str] = None
     # Replicate AI (Image Generation)
     REPLICATE_API_TOKEN: Optional[str] = None
 
