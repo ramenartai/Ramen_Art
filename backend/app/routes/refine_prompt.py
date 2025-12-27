@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from google import generativeai as genai
+import google.generativeai as genai
+from google.generativeai import types
 from app.core.config import settings
 from app.utils.auth_utils import get_current_user
 import weave
