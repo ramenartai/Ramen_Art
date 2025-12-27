@@ -11,6 +11,7 @@ venv
 # Backend env example and local env
 backend/.env
 backend/.env.local
+backend/.venv
 
 # Node / frontend
 node_modules/
