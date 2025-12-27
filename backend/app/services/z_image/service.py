@@ -45,10 +45,17 @@ async def generate_image_service(
             randomize_seed=True,
             api_name="/generate_image",
         )
+        
+        print(f"DEBUG: Z-Image result type: {type(result)}")
+        print(f"DEBUG: Z-Image result content: {result}")
 
-        # Result is [image_dict, seed_float]
-        image_result = result[0]
-        seed_used = result[1]
+        # Handle different return types
+        if isinstance(result, (list, tuple)):
+            image_result = result[0]
+            seed_used = result[1] if len(result) > 1 else None
+        else:
+            image_result = result
+            seed_used = None
 
         # 2. Extract local image path
         if not image_result:
@@ -57,6 +64,7 @@ async def generate_image_service(
         if isinstance(image_result, dict):
             local_image_path = image_result.get("path")
         else:
+            # If it's a string, it's likely the path itself
             local_image_path = image_result
 
         if not local_image_path or not os.path.exists(local_image_path):
