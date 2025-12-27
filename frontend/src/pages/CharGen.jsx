@@ -22,6 +22,11 @@ const CharGen = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [toast, setToast] = useState(null);
+    const [selectedCharacters, setSelectedCharacters] = useState([]);
+
+    // Dynamic character states
+    const [storyCharacters, setStoryCharacters] = useState([]);
+    const [isLoadingCharacters, setIsLoadingCharacters] = useState(false);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
@@ -51,6 +56,28 @@ const CharGen = () => {
             setUserData(JSON.parse(storedUser));
         }
     }, []);
+
+    // Fetch characters when story changes
+    useEffect(() => {
+        if (selectedStory) {
+            const fetchCharacters = async () => {
+                setIsLoadingCharacters(true);
+                try {
+                    const response = await axios.get(`${BACKEND_URL}/api/character/by-story/${selectedStory}`, {
+                        withCredentials: true,
+                    });
+                    setStoryCharacters(response.data);
+                } catch (error) {
+                    console.error('Failed to fetch characters:', error);
+                } finally {
+                    setIsLoadingCharacters(false);
+                }
+            };
+            fetchCharacters();
+        } else {
+            setStoryCharacters([]);
+        }
+    }, [selectedStory]);
 
     // Save character function
     const handleSaveCharacter = async () => {
@@ -174,18 +201,6 @@ const CharGen = () => {
             return `${description}, ${tagsText}`;
         }
         return description || tagsText;
-    };
-
-    const handleInspireMe = () => {
-        const inspirations = [
-            "A mysterious warrior with silver hair and piercing blue eyes, wearing dark armor",
-            "A cheerful magical girl with pink twin tails and sparkling green eyes",
-            "A stoic samurai with black hair in a ponytail, wearing traditional hakama",
-            "A cyberpunk hacker with neon blue hair and tech goggles",
-            "An elegant elf princess with long blonde hair and emerald eyes"
-        ];
-        const randomInspiration = inspirations[Math.floor(Math.random() * inspirations.length)];
-        setDescription(randomInspiration);
     };
     const handleRefine = async () => {
         const fullPrompt = getFullPrompt();
@@ -315,26 +330,19 @@ const CharGen = () => {
                                 </select>
                             </div>
 
-                            {/* Character Name */}
+                            {/* Character Name & Import */}
                             <div className="character-name-section">
-                                <label className="input-label">Character Name</label>
-                                <input
-                                    type="text"
-                                    className="character-name-input"
-                                    placeholder="Enter character name..."
-                                    value={characterName}
-                                    onChange={(e) => setCharacterName(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="card-header">
-                                <h2 className="card-title">Character Appearance</h2>
-                                <button className="inspire-btn" onClick={handleInspireMe}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                    </svg>
-                                    Inspire me
-                                </button>
+                                <label className="input-label">Character Name / Select OC</label>
+                                <div className="name-input-wrapper" style={{ display: 'flex', gap: '10px' }}>
+                                    <input
+                                        type="text"
+                                        className="character-name-input"
+                                        placeholder="Enter character name..."
+                                        value={characterName}
+                                        onChange={(e) => setCharacterName(e.target.value)}
+                                        style={{ flex: 1 }}
+                                    />
+                                </div>
                             </div>
 
                             <div className="description-section">

@@ -3,6 +3,7 @@ import StoryChatbox from "./storyChatbox";
 import StoryCanvas from "./storyCanvas";
 import Toast from "../Components/Toast";
 import "../Css/storyboard.css";
+import { IoSave } from "react-icons/io5";
 
 const Storyboard = ({ onClose, initialStoryData = null }) => {
   const [storyData, setStoryData] = useState(initialStoryData);
@@ -83,13 +84,9 @@ const Storyboard = ({ onClose, initialStoryData = null }) => {
             title={isPinned ? "Story Saved" : "Save Story"}
           >
             {isSaving ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="spinning">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
-              </svg>
+              <p>✍️</p>
+            ) : (<>
+            <IoSave /></>
             )}
           </button>
           <button

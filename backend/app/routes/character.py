@@ -143,3 +143,35 @@ async def delete_character(
             status_code=500,
             detail=f"Failed to delete character: {str(e)}"
         )
+
+
+@router.get("/by-story/{story_id}", response_model=list[CharacterListItem])
+async def get_characters_by_story(
+    story_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get all characters for a specific story
+    """
+    try:
+        characters = await mongodb.db[CHARACTER_COLLECTION].find({
+            "user_id": str(current_user["_id"]),
+            "story_id": story_id
+        }).sort("created_at", -1).to_list(length=100)
+
+        return [
+            CharacterListItem(
+                id=str(char["_id"]),
+                story_id=char["story_id"],
+                character_name=char["character_name"],
+                image_url=char["image_url"],
+                created_at=char["created_at"]
+            )
+            for char in characters
+        ]
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch characters: {str(e)}"
+        )

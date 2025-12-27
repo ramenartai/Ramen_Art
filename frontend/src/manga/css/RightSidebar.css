@@ -1,10 +1,49 @@
 /* Right Sidebar Styles */
 .right-sidebar {
-    width: 280px;
-    background: #16213e;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    width: 320px;
+    background: #1a2332;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
+}
+
+/* Tabs */
+.sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #16202e;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tab-btn:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.tab-btn.active {
+    color: #667eea;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
 }
 
 .chat-header {
@@ -12,7 +51,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .chat-header h3 {
@@ -31,6 +70,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    overflow-y: auto;
 }
 
 .prompt-section {
@@ -217,7 +257,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 1rem;
+    padding: 1.125rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     border-radius: 12px;
@@ -225,8 +265,10 @@
     font-size: 0.95rem;
     font-weight: 600;
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.5;
     margin-top: auto;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
 }
 
 .generate-btn:not(:disabled) {
@@ -236,7 +278,7 @@
 
 .generate-btn:not(:disabled):hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
 }
 
 .page-number-badge {
@@ -314,4 +356,116 @@
 
 .panel-char-item.selected span {
     color: white;
+}
+
+/* Page Preview Section */
+.page-preview-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+
+.page-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-count {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.page-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.page-preview-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.page-preview-thumbnail {
+    aspect-ratio: 5/7;
+    background: rgba(15, 20, 35, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-preview-thumbnail::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.page-preview-card:hover .page-preview-thumbnail {
+    border-color: rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+}
+
+.page-preview-card:hover .page-preview-thumbnail::before {
+    opacity: 1;
+}
+
+.page-preview-card.active .page-preview-thumbnail {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.15);
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+}
+
+.page-preview-card.active .page-preview-thumbnail::before {
+    opacity: 1;
+}
+
+.page-preview-number {
+    color: white;
+    font-weight: 600;
+    font-size: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.page-preview-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.page-preview-card.active .page-preview-label {
+    color: #667eea;
+    font-weight: 600;
+}
+
+/* Scrollbar */
+.chat-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.chat-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.chat-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }

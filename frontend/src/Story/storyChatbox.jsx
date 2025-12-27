@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } f
 import handleSubmit from "./getStory";
 import refinePrompt from "../utils/aiOptimize";
 import Toast from "../Components/Toast";
+import { BiSolidBot } from "react-icons/bi";
+import { IoSend } from "react-icons/io5";
 
 const MIN_WIDTH = 260;
 const MAX_WIDTH = 480;
@@ -239,7 +241,7 @@ const StoryChatbox = forwardRef(({ onStoryData }, ref) => {
           disabled={isRefining || isLoading || !input.trim()}
           title="Refine your prompt with AI"
         >
-          {isRefining ? '✨' : '🎆'}
+          {isRefining ? "..." : <BiSolidBot />}
         </button>
         <button
           className="story-chat-send-btn"
@@ -250,7 +252,7 @@ const StoryChatbox = forwardRef(({ onStoryData }, ref) => {
             opacity: isLoading || isRefining ? 0.6 : 1
           }}
         >
-          {isLoading || isRefining ? "⏳" : "✨"}
+          {isLoading || isRefining ? "..." : <IoSend />}
         </button>
       </form>
       {toast && (

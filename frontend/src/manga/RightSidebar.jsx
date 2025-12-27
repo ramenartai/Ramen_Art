@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './css/RightSidebar.css';
 
 const RightSidebar = ({
@@ -13,8 +13,13 @@ const RightSidebar = ({
     panelPrompts,
     setPanelPrompts,
     panelCharacters,
-    setPanelCharacters
+    setPanelCharacters,
+    pages,
+    activePageId,
+    onPageSelect
 }) => {
+    const [activeTab, setActiveTab] = useState('prompt'); // 'prompt' or 'page'
+
     // Helper to get selected character objects
     const availableCharacters = characters.filter(c => selectedCharacters.includes(c.id));
 
@@ -41,13 +46,29 @@ const RightSidebar = ({
     if (activePanelId) {
         return (
             <aside className="right-sidebar panel-mode">
+                {/* Tabs */}
+                <div className="sidebar-tabs">
+                    <button
+                        className={`tab-btn ${activeTab === 'prompt' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('prompt')}
+                    >
+                        Prompt
+                    </button>
+                    <button
+                        className={`tab-btn ${activeTab === 'page' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('page')}
+                    >
+                        Page
+                    </button>
+                </div>
+
                 <div className="chat-header">
                     <h3>Panel Configuration</h3>
                     <div className="panel-badge">Panel {activePanelId}</div>
                 </div>
 
                 <div className="chat-content">
-                    {/* Panel Scence Description */}
+                    {/* Panel Scene Description */}
                     <div className="prompt-section">
                         <label className="prompt-label">Panel Action</label>
                         <textarea
@@ -110,8 +131,24 @@ const RightSidebar = ({
 
     return (
         <aside className="right-sidebar">
+            {/* Tabs */}
+            <div className="sidebar-tabs">
+                <button
+                    className={`tab-btn ${activeTab === 'prompt' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('prompt')}
+                >
+                    Prompt
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'page' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('page')}
+                >
+                    Page
+                </button>
+            </div>
+
             <div className="chat-header">
-                <h3>Story Prompt</h3>
+                <h3>{activeTab === 'prompt' ? 'Story Prompt' : 'Pages'}</h3>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 16v-4M12 8h.01" />
@@ -119,81 +156,97 @@ const RightSidebar = ({
             </div>
 
             <div className="chat-content">
-                <div className="prompt-section">
-                    <label className="prompt-label">Scene Description</label>
-                    <textarea
-                        className="prompt-textarea"
-                        placeholder="Describe the manga scene... (e.g., 'A warrior stands on a cliff overlooking a vast battlefield at sunset')"
-                        value={prompt}
-                        onChange={(e) => onPromptChange(e.target.value)}
-                        rows="4"
-                    />
-                    <button
-                        className="refine-prompt-btn"
-                        onClick={onRefinePrompt}
-                        disabled={isRefining || !prompt.trim()}
-                    >
-                        {isRefining ? (
-                            <>
-                                <svg className="spinning" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                                </svg>
-                                Refining...
-                            </>
-                        ) : (
-                            <>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                </svg>
-                                Refine with AI
-                            </>
-                        )}
-                    </button>
-                </div>
-
-                <div className="settings-section">
-                    <div className="setting-item">
-                        <label>Continue from Previous</label>
-                        <div className="toggle-switch">
-                            <input type="checkbox" id="continue-toggle" />
-                            <label htmlFor="continue-toggle"></label>
+                {activeTab === 'prompt' ? (
+                    <>
+                        <div className="prompt-section">
+                            <label className="prompt-label">Scene Description</label>
+                            <textarea
+                                className="prompt-textarea"
+                                placeholder="Describe the manga scene... (e.g., 'A warrior stands on a cliff overlooking a vast battlefield at sunset')"
+                                value={prompt}
+                                onChange={(e) => onPromptChange(e.target.value)}
+                                rows="4"
+                            />
+                            <button
+                                className="refine-prompt-btn"
+                                onClick={onRefinePrompt}
+                                disabled={isRefining || !prompt.trim()}
+                            >
+                                {isRefining ? (
+                                    <>
+                                        <svg className="spinning" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                        </svg>
+                                        Refining...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                        </svg>
+                                        Refine with AI
+                                    </>
+                                )}
+                            </button>
                         </div>
-                    </div>
 
-                    <div className="setting-item">
-                        <label>Page Generation</label>
-                        <div className="preset-selector">
-                            <div className="preset-avatar"></div>
-                            <span>Manga Style (Dev)</span>
+                        <div className="settings-section">
+                            <div className="setting-item">
+                                <label>Continue from Previous</label>
+                                <div className="toggle-switch">
+                                    <input type="checkbox" id="continue-toggle" />
+                                    <label htmlFor="continue-toggle"></label>
+                                </div>
+                            </div>
+
+                            <div className="setting-item">
+                                <label>Page Generation</label>
+                                <div className="preset-selector">
+                                    <div className="preset-avatar"></div>
+                                    <span>Manga Style (Dev)</span>
+                                </div>
+                            </div>
+
+                            <div className="setting-item">
+                                <label>Panel Arrangement</label>
+                                <button className="reset-btn" onClick={onResetPanels}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                                        <path d="M21 3v5h-5" />
+                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                                        <path d="M3 21v-5h5" />
+                                    </svg>
+                                    Reset Panels
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="setting-item">
-                        <label>Use Model Settings</label>
-                        <div className="toggle-switch">
-                            <input type="checkbox" id="model-toggle" />
-                            <label htmlFor="model-toggle"></label>
-                        </div>
-                    </div>
-
-                    <div className="setting-item">
-                        <label>Panel Arrangement</label>
-                        <button className="reset-btn" onClick={onResetPanels}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                                <path d="M21 3v5h-5" />
-                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                                <path d="M3 21v-5h5" />
-                            </svg>
-                            Reset Panels
+                        <button className="generate-btn" disabled>
+                            <span>Generate Page</span>
+                            <span className="page-number-badge">#40</span>
                         </button>
+                    </>
+                ) : (
+                    <div className="page-preview-section">
+                        <div className="page-preview-header">
+                            <span className="page-count">{pages.length} {pages.length === 1 ? 'Page' : 'Pages'}</span>
+                        </div>
+                        <div className="page-preview-grid">
+                            {pages.map((page) => (
+                                <div
+                                    key={page.id}
+                                    className={`page-preview-card ${activePageId === page.id ? 'active' : ''}`}
+                                    onClick={() => onPageSelect(page.id)}
+                                >
+                                    <div className="page-preview-thumbnail">
+                                        <div className="page-preview-number">{page.id}</div>
+                                    </div>
+                                    <span className="page-preview-label">Page {page.id}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
-
-                <button className="generate-btn" disabled>
-                    <span>Generate Page</span>
-                    <span className="page-number-badge">#80</span>
-                </button>
+                )}
             </div>
         </aside>
     );

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import refinePrompt from '../utils/aiOptimize';
 import MangaHeader from '../manga/MangaHeader';
-import LeftSidebar from '../manga/LeftSidebar';
+import SelectionSidebar from '../manga/SelectionSidebar';
+import PanelSidebar from '../manga/PanelSidebar';
 import MangaCanvas from '../manga/MangaCanvas';
 import RightSidebar from '../manga/RightSidebar';
 import '../Css/MangaCreator.css';
@@ -13,14 +14,19 @@ const MangaCreator = () => {
     const [userData, setUserData] = useState(null);
     const [stories, setStories] = useState([]);
     const [selectedStory, setSelectedStory] = useState('');
+    const [arcs, setArcs] = useState([]);
+    const [selectedArc, setSelectedArc] = useState('');
+    const [chapters, setChapters] = useState([]);
+    const [selectedChapter, setSelectedChapter] = useState('');
     const [characters, setCharacters] = useState([]);
     const [selectedCharacters, setSelectedCharacters] = useState([]);
-    const [panels, setPanels] = useState([
-        { id: 1, name: 'Panel 1', visible: true },
-        { id: 2, name: 'Panel 2', visible: true },
-        { id: 3, name: 'Panel 3', visible: true },
-        { id: 4, name: 'Panel 4', visible: true }
+
+    // --- Page State ---
+    const [pages, setPages] = useState([
+        { id: 1, panels: [] }
     ]);
+    const [activePageId, setActivePageId] = useState(1);
+
     const [prompt, setPrompt] = useState('');
     const [isRefining, setIsRefining] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -29,6 +35,48 @@ const MangaCreator = () => {
     const [activePanelId, setActivePanelId] = useState(null);
     const [panelPrompts, setPanelPrompts] = useState({});
     const [panelCharacters, setPanelCharacters] = useState({});
+    const [activeTool, setActiveTool] = useState('select');
+    const [selectedElement, setSelectedElement] = useState(null);
+    const [history, setHistory] = useState({ past: [], present: [], future: [] });
+
+    // --- Resizable Sidebar State ---
+    const [selectionWidth, setSelectionWidth] = useState(260);
+    const [panelWidth, setPanelWidth] = useState(260);
+    const [promptWidth, setPromptWidth] = useState(300);
+    const [isDragging, setIsDragging] = useState(null); // 'selection', 'panel', or 'prompt'
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (!isDragging) return;
+
+            if (isDragging === 'selection') {
+                const newWidth = Math.max(150, Math.min(450, e.clientX));
+                setSelectionWidth(newWidth);
+            } else if (isDragging === 'panel') {
+                const newWidth = Math.max(150, Math.min(450, e.clientX - selectionWidth));
+                setPanelWidth(newWidth);
+            } else if (isDragging === 'prompt') {
+                const newWidth = Math.max(200, Math.min(500, window.innerWidth - e.clientX));
+                setPromptWidth(newWidth);
+            }
+        };
+
+        const handleMouseUp = () => {
+            setIsDragging(null);
+            document.body.style.cursor = 'default';
+        };
+
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'col-resize';
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, selectionWidth]);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
@@ -96,7 +144,19 @@ const MangaCreator = () => {
             setUserData(JSON.parse(storedUser));
         }
 
-        // Load saved panel layout from localStorage
+        const savedPages = localStorage.getItem('mangaPages');
+        if (savedPages) {
+            try {
+                const parsedPages = JSON.parse(savedPages);
+                if (Array.isArray(parsedPages) && parsedPages.length > 0) {
+                    setPages(parsedPages);
+                    setActivePageId(parsedPages[0].id);
+                }
+            } catch (error) {
+                console.error('Failed to load saved pages:', error);
+            }
+        }
+
         const savedLayoutId = localStorage.getItem('activePanelLayoutId');
         if (savedLayoutId) {
             try {
@@ -111,14 +171,25 @@ const MangaCreator = () => {
             }
         }
 
-        // Load saved story selection
         const savedStory = localStorage.getItem('selectedStory');
+        const savedArc = localStorage.getItem('selectedArc');
+
         if (savedStory) {
             setSelectedStory(savedStory);
             fetchCharacters(savedStory);
+            fetchArcs(savedStory);
+
+            if (savedArc) {
+                setSelectedArc(savedArc);
+                fetchChapters(savedStory, savedArc);
+            }
         }
 
-        // Load saved characters
+        const savedChapter = localStorage.getItem('selectedChapter');
+        if (savedChapter) {
+            setSelectedChapter(savedChapter);
+        }
+
         const savedCharacters = localStorage.getItem('selectedCharacters');
         if (savedCharacters) {
             try {
@@ -128,24 +199,18 @@ const MangaCreator = () => {
             }
         }
 
-        // Load saved prompt
         const savedPrompt = localStorage.getItem('mangaPrompt');
         if (savedPrompt) {
             setPrompt(savedPrompt);
         }
 
-        // Load saved panels
-        const savedPanels = localStorage.getItem('mangaPanels');
-        if (savedPanels) {
-            try {
-                setPanels(JSON.parse(savedPanels));
-            } catch (error) {
-                console.error('Failed to load saved panels:', error);
-            }
-        }
-
         fetchStories();
     }, []);
+
+    useEffect(() => {
+        localStorage.setItem('mangaPages', JSON.stringify(pages));
+    }, [pages]);
+
     const fetchStories = async () => {
         try {
             const response = await axios.get(`${BACKEND_URL}/api/story/list`, {
@@ -168,16 +233,64 @@ const MangaCreator = () => {
         }
     };
 
+    const fetchArcs = async (storyId) => {
+        try {
+            const response = await axios.get(`${BACKEND_URL}/api/story/${storyId}/arcs`, {
+                withCredentials: true,
+            });
+            setArcs(response.data.arcs || []);
+        } catch (error) {
+            console.error('Failed to fetch arcs:', error);
+            setArcs([]);
+        }
+    };
+
+    const fetchChapters = async (storyId, arcId) => {
+        try {
+            const response = await axios.get(`${BACKEND_URL}/api/story/${storyId}/arcs/${arcId}/chapters`, {
+                withCredentials: true,
+            });
+            setChapters(response.data.chapters || []);
+        } catch (error) {
+            console.error('Failed to fetch chapters:', error);
+            setChapters([]);
+        }
+    };
+
     const handleStorySelect = (storyId) => {
         setSelectedStory(storyId);
         localStorage.setItem('selectedStory', storyId);
         setSelectedCharacters([]);
+        setSelectedArc('');
+        setSelectedChapter('');
         localStorage.removeItem('selectedCharacters');
+        localStorage.removeItem('selectedArc');
+        localStorage.removeItem('selectedChapter');
         if (storyId) {
             fetchCharacters(storyId);
+            fetchArcs(storyId);
         } else {
             setCharacters([]);
+            setArcs([]);
+            setChapters([]);
         }
+    };
+
+    const handleArcSelect = (arcId) => {
+        setSelectedArc(arcId);
+        localStorage.setItem('selectedArc', arcId);
+        setSelectedChapter('');
+        localStorage.removeItem('selectedChapter');
+        if (arcId && selectedStory) {
+            fetchChapters(selectedStory, arcId);
+        } else {
+            setChapters([]);
+        }
+    };
+
+    const handleChapterSelect = (chapterId) => {
+        setSelectedChapter(chapterId);
+        localStorage.setItem('selectedChapter', chapterId);
     };
 
     const handleCharacterToggle = (characterId) => {
@@ -190,26 +303,99 @@ const MangaCreator = () => {
         });
     };
 
-    const handlePanelToggle = (panelId) => {
-        setPanels(prev => {
-            const updated = prev.map(panel =>
-                panel.id === panelId ? { ...panel, visible: !panel.visible } : panel
-            );
-            localStorage.setItem('mangaPanels', JSON.stringify(updated));
-            return updated;
-        });
+    const addPage = () => {
+        const newId = Math.max(...pages.map(p => p.id), 0) + 1;
+        const newPage = { id: newId, panels: [], templateId: null, elements: [] };
+        setPages(prev => [...prev, newPage]);
+        setActivePageId(newId);
+        setActivePanelLayout(null);
+        setSelectedTemplate(null);
+        setActivePanelId(null);
     };
 
-    const addPanel = () => {
-        const newId = Math.max(...panels.map(p => p.id), 0) + 1;
-        const updated = [...panels, { id: newId, name: `Panel ${newId}`, visible: true }];
-        setPanels(updated);
-        localStorage.setItem('mangaPanels', JSON.stringify(updated));
+    const deletePage = (pageId) => {
+        if (pages.length <= 1) {
+            alert('Cannot delete the last page!');
+            return;
+        }
+        if (!window.confirm(`Are you sure you want to delete Page ${pageId}?`)) {
+            return;
+        }
+        const pageIndex = pages.findIndex(p => p.id === pageId);
+        setPages(prev => prev.filter(p => p.id !== pageId));
+        if (activePageId === pageId) {
+            const newActiveIndex = pageIndex > 0 ? pageIndex - 1 : 0;
+            const remainingPages = pages.filter(p => p.id !== pageId);
+            if (remainingPages[newActiveIndex]) {
+                setActivePageId(remainingPages[newActiveIndex].id);
+            }
+        }
+    };
+
+    const activePage = pages.find(p => p.id === activePageId);
+    const canvasElements = activePage?.elements || [];
+
+    const handleElementsChange = (newElements) => {
+        setPages(prev => prev.map(p =>
+            p.id === activePageId ? { ...p, elements: newElements } : p
+        ));
+        addToHistory(newElements);
+    };
+
+    const addToHistory = (elements) => {
+        setHistory(prev => ({
+            past: [...prev.past, prev.present],
+            present: elements,
+            future: []
+        }));
+    };
+
+    const undo = () => {
+        if (history.past.length === 0) return;
+        const previous = history.past[history.past.length - 1];
+        const newPast = history.past.slice(0, history.past.length - 1);
+        setHistory({
+            past: newPast,
+            present: previous,
+            future: [history.present, ...history.future]
+        });
+        setPages(prev => prev.map(p =>
+            p.id === activePageId ? { ...p, elements: previous } : p
+        ));
+    };
+
+    const redo = () => {
+        if (history.future.length === 0) return;
+        const next = history.future[0];
+        const newFuture = history.future.slice(1);
+        setHistory({
+            past: [...history.past, history.present],
+            present: next,
+            future: newFuture
+        });
+        setPages(prev => prev.map(p =>
+            p.id === activePageId ? { ...p, elements: next } : p
+        ));
+    };
+
+    const handlePageSelect = (pageId) => {
+        setActivePageId(pageId);
+        const page = pages.find(p => p.id === pageId);
+        if (page && page.templateId) {
+            const template = panelTemplates.find(t => t.id === page.templateId);
+            if (template) {
+                setActivePanelLayout(template);
+                setSelectedTemplate(template.id);
+            }
+        } else {
+            setActivePanelLayout(null);
+            setSelectedTemplate(null);
+        }
+        setActivePanelId(null);
     };
 
     const handleRefinePrompt = async () => {
         if (!prompt.trim()) return;
-
         setIsRefining(true);
         try {
             const refined = await refinePrompt(prompt);
@@ -228,28 +414,31 @@ const MangaCreator = () => {
 
     const handleAcceptTemplate = () => {
         if (!selectedTemplate) return;
-
         const template = panelTemplates.find(t => t.id === selectedTemplate);
         if (template) {
             setActivePanelLayout(template);
-            // Save only the template ID to localStorage (not the JSX)
+            setPages(prev => prev.map(p =>
+                p.id === activePageId ? { ...p, templateId: template.id } : p
+            ));
             localStorage.setItem('activePanelLayoutId', template.id.toString());
-            setActivePanelId(null); // Reset active panel on new template
-            console.log('Template applied:', template.layout);
+            setActivePanelId(null);
         }
     };
 
     const handleResetPanels = () => {
         setActivePanelLayout(null);
         setSelectedTemplate(null);
-        setActivePanelId(null); // Reset active panel
-        // Remove from localStorage
+        setActivePanelId(null);
+        setPages(prev => prev.map(p =>
+            p.id === activePageId ? { ...p, templateId: null } : p
+        ));
         localStorage.removeItem('activePanelLayoutId');
         localStorage.removeItem('selectedStory');
         localStorage.removeItem('selectedCharacters');
         localStorage.removeItem('mangaPrompt');
-        localStorage.removeItem('mangaPanels');
-        console.log('Panels reset');
+        localStorage.removeItem('mangaPages');
+        setPages([{ id: 1, panels: [] }]);
+        setActivePageId(1);
     };
 
     return (
@@ -262,45 +451,96 @@ const MangaCreator = () => {
             />
 
             <div className="manga-content">
-                <LeftSidebar
-                    stories={stories}
-                    selectedStory={selectedStory}
-                    onStorySelect={handleStorySelect}
-                    characters={characters}
-                    selectedCharacters={selectedCharacters}
-                    onCharacterToggle={handleCharacterToggle}
-                    panelTemplates={panelTemplates}
-                    selectedTemplate={selectedTemplate}
-                    onTemplateSelect={handleTemplateSelect}
-                    onAcceptTemplate={handleAcceptTemplate}
+                {/* Selection Sidebar */}
+                <div style={{ width: `${selectionWidth}px`, minWidth: '150px', flexShrink: 0, overflowY: 'auto' }}>
+                    <SelectionSidebar
+                        stories={stories}
+                        selectedStory={selectedStory}
+                        onStorySelect={handleStorySelect}
+                        arcs={arcs}
+                        selectedArc={selectedArc}
+                        onArcSelect={handleArcSelect}
+                        chapters={chapters}
+                        selectedChapter={selectedChapter}
+                        onChapterSelect={handleChapterSelect}
+                        characters={characters}
+                        selectedCharacters={selectedCharacters}
+                        onCharacterToggle={handleCharacterToggle}
+                    />
+                </div>
+
+                <div
+                    className="custom-resize-handle"
+                    onMouseDown={() => setIsDragging('selection')}
                 />
 
-                <MangaCanvas
-                    activePanelLayout={activePanelLayout}
-                    panels={panels}
-                    onPanelToggle={handlePanelToggle}
-                    onAddPanel={addPanel}
-                    activePanelId={activePanelId}
-                    onPanelSelect={(id) => setActivePanelId(id)}
+                {/* Panel Sidebar */}
+                <div style={{ width: `${panelWidth}px`, minWidth: '150px', flexShrink: 0, overflowY: 'auto' }}>
+                    <PanelSidebar
+                        pages={pages}
+                        activePageId={activePageId}
+                        onPageSelect={handlePageSelect}
+                        onAddPage={addPage}
+                        onDeletePage={deletePage}
+                        panelTemplates={panelTemplates}
+                        selectedTemplate={selectedTemplate}
+                        onTemplateSelect={handleTemplateSelect}
+                        onAcceptTemplate={handleAcceptTemplate}
+                    />
+                </div>
+
+                <div
+                    className="custom-resize-handle"
+                    onMouseDown={() => setIsDragging('panel')}
                 />
 
-                <RightSidebar
-                    prompt={prompt}
-                    onPromptChange={(value) => {
-                        setPrompt(value);
-                        localStorage.setItem('mangaPrompt', value);
-                    }}
-                    isRefining={isRefining}
-                    onRefinePrompt={handleRefinePrompt}
-                    onResetPanels={handleResetPanels}
-                    activePanelId={activePanelId}
-                    selectedCharacters={selectedCharacters}
-                    characters={characters}
-                    panelPrompts={panelPrompts}
-                    setPanelPrompts={setPanelPrompts}
-                    panelCharacters={panelCharacters}
-                    setPanelCharacters={setPanelCharacters}
+                {/* Main Canvas Area */}
+                <div className="canvas-container-flex" style={{ flex: 1, overflow: 'hidden' }}>
+                    <MangaCanvas
+                        activePanelLayout={activePanelLayout}
+                        activePanelId={activePanelId}
+                        onPanelSelect={(id) => setActivePanelId(id)}
+                        activeTool={activeTool}
+                        onToolChange={setActiveTool}
+                        canvasElements={canvasElements}
+                        onElementsChange={handleElementsChange}
+                        selectedElement={selectedElement}
+                        onSelectElement={setSelectedElement}
+                        onUndo={undo}
+                        onRedo={redo}
+                        canUndo={history.past.length > 0}
+                        canRedo={history.future.length > 0}
+                    />
+                </div>
+
+                <div
+                    className="custom-resize-handle"
+                    onMouseDown={() => setIsDragging('prompt')}
                 />
+
+                {/* Right Sidebar */}
+                <div style={{ width: `${promptWidth}px`, minWidth: '200px', flexShrink: 0, overflowY: 'auto' }}>
+                    <RightSidebar
+                        prompt={prompt}
+                        onPromptChange={(value) => {
+                            setPrompt(value);
+                            localStorage.setItem('mangaPrompt', value);
+                        }}
+                        isRefining={isRefining}
+                        onRefinePrompt={handleRefinePrompt}
+                        onResetPanels={handleResetPanels}
+                        activePanelId={activePanelId}
+                        selectedCharacters={selectedCharacters}
+                        characters={characters}
+                        panelPrompts={panelPrompts}
+                        setPanelPrompts={setPanelPrompts}
+                        panelCharacters={panelCharacters}
+                        setPanelCharacters={setPanelCharacters}
+                        pages={pages}
+                        activePageId={activePageId}
+                        onPageSelect={handlePageSelect}
+                    />
+                </div>
             </div>
         </div>
     );

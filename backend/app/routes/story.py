@@ -140,3 +140,106 @@ async def delete_story(
             status_code=500,
             detail=f"Failed to delete story: {str(e)}"
         )
+
+
+# ========== Get Story Arcs ==========
+@router.get("/{story_id}/arcs")
+async def get_story_arcs(
+    story_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get all story arcs for a specific story
+    """
+    try:
+        story = await mongodb.db[STORY_COLLECTION].find_one({
+            "_id": ObjectId(story_id),
+            "user_id": str(current_user["_id"])
+        })
+
+        if not story:
+            raise HTTPException(
+                status_code=404,
+                detail="Story not found"
+            )
+
+        # Extract story arcs
+        story_arcs = story.get("story_arcs", [])
+        
+        # Return simplified arc data
+        arcs = [
+            {
+                "arc_id": arc.get("arc_id"),
+                "arc_title": arc.get("arc_title"),
+                "arc_summary": arc.get("arc_summary")
+            }
+            for arc in story_arcs
+        ]
+
+        return {"arcs": arcs}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch story arcs: {str(e)}"
+        )
+
+
+# ========== Get Arc Chapters ==========
+@router.get("/{story_id}/arcs/{arc_id}/chapters")
+async def get_arc_chapters(
+    story_id: str,
+    arc_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get all chapters for a specific story arc
+    """
+    try:
+        story = await mongodb.db[STORY_COLLECTION].find_one({
+            "_id": ObjectId(story_id),
+            "user_id": str(current_user["_id"])
+        })
+
+        if not story:
+            raise HTTPException(
+                status_code=404,
+                detail="Story not found"
+            )
+
+        # Find the specific arc
+        story_arcs = story.get("story_arcs", [])
+        selected_arc = next((arc for arc in story_arcs if arc.get("arc_id") == arc_id), None)
+        
+        if not selected_arc:
+            raise HTTPException(
+                status_code=404,
+                detail="Arc not found"
+            )
+
+        # Extract chapters from the arc
+        chapters = selected_arc.get("chapters", [])
+        
+        # Return simplified chapter data
+        chapter_list = [
+            {
+                "chapter_id": chapter.get("chapter_id"),
+                "chapter_title": chapter.get("chapter_title"),
+                "chapter_purpose": chapter.get("chapter_purpose")
+            }
+            for chapter in chapters
+        ]
+
+        return {"chapters": chapter_list}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch chapters: {str(e)}"
+        )
+
+

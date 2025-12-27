@@ -1,0 +1,131 @@
+/* Canvas Elements Overlay */
+.canvas-elements-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.canvas-element {
+    position: absolute;
+    cursor: move;
+    pointer-events: auto;
+}
+
+.canvas-element.selected {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Text Element */
+.text-element {
+    padding: 8px;
+    background: transparent;
+}
+
+.text-element [contenteditable] {
+    width: 100%;
+    height: 100%;
+    outline: none;
+    cursor: text;
+}
+
+/* Shape Element */
+.shape-element {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Bubble Element */
+.bubble-element {
+    position: relative;
+}
+
+.bubble-text {
+    position: absolute;
+    top: 15%;
+    left: 15%;
+    right: 15%;
+    bottom: 25%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 14px;
+    color: #000;
+    outline: none;
+    cursor: text;
+    overflow: hidden;
+}
+
+/* Resize Handles */
+.resize-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #667eea;
+    border: 2px solid white;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.resize-handle-nw {
+    top: -5px;
+    left: -5px;
+    cursor: nw-resize;
+}
+
+.resize-handle-ne {
+    top: -5px;
+    right: -5px;
+    cursor: ne-resize;
+}
+
+.resize-handle-sw {
+    bottom: -5px;
+    left: -5px;
+    cursor: sw-resize;
+}
+
+.resize-handle-se {
+    bottom: -5px;
+    right: -5px;
+    cursor: se-resize;
+}
+
+/* Delete Button */
+.delete-element-btn {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 2px solid white;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 11;
+    transition: all 0.2s ease;
+}
+
+.delete-element-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+/* Selection Box */
+.selection-box {
+    position: absolute;
+    border: 2px dashed #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    pointer-events: none;
+}
