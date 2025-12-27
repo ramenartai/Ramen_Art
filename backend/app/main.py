@@ -2,6 +2,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.mongodb import connect_db, close_db
 from app.routes import test, auth, z_image, story, character, refine_prompt, manga
+import weave
+import os
+from app.core.config import settings
+
+# Initialize Weave globally to ensure it captures all traces
+if settings.WANDB_API_KEY:
+    os.environ["WANDB_API_KEY"] = settings.WANDB_API_KEY
+    print(f"Initializing Weave with project: ramen-art-backend")
+    # Disable implicit patching to avoid conflicts with manual decorators
+    weave.init("ramen-art-backend")
 
 app = FastAPI()
 

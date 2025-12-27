@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # Replicate AI (Image Generation)
     REPLICATE_API_TOKEN: Optional[str] = None
 
+    # Weights & Biases
+    WANDB_API_KEY: Optional[str] = None
+
     # Stability AI (Image Generation)
     STABILITY_API_KEY: Optional[str] = None
 

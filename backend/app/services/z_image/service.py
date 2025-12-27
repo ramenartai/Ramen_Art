@@ -1,4 +1,5 @@
 import os
+import weave
 from app.services.z_image.client import get_z_image_client
 from app.services.z_image.constants import (
     DEFAULT_RESOLUTION,
@@ -10,6 +11,7 @@ from app.services.z_image.constants import (
 from app.services.cloudinary.service import upload_image_to_cloudinary
 
 
+@weave.op(name="z_image_generate")
 async def generate_image_service(
     prompt: str,
     resolution: str | None,
