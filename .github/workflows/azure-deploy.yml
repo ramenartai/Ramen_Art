@@ -43,9 +43,48 @@ jobs:
         run: |
           mkdir -p backend/static
           cp -r frontend/dist/* backend/static/
-          echo "✅ Frontend files copied to backend/static"
 
-      # 5. Deploy to Azure Web App
+      # 5. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # 6. Create virtual environment and install dependencies
+      - name: Create virtual environment and install dependencies
+        working-directory: ./backend
+        run: |
+          python -m venv antenv
+          source antenv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 7. Create startup script for Linux App Service
+      - name: Create startup script
+        working-directory: ./backend
+        run: |
+          cat > startup.sh << 'EOF'
+          #!/bin/bash
+          
+          echo "=== Starting Ramen Art AI Application ==="
+          
+          # Activate virtual environment
+          source /home/site/wwwroot/antenv/bin/activate
+          
+          # Start Gunicorn
+          gunicorn app.main:app \
+            --workers 2 \
+            --worker-class uvicorn.workers.UvicornWorker \
+            --bind 0.0.0.0:8000 \
+            --timeout 120 \
+            --access-logfile - \
+            --error-logfile - \
+            --log-level info
+          EOF
+          
+          chmod +x startup.sh
+
+      # 8. Deploy to Azure Web App
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
@@ -53,11 +92,19 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./backend
 
-      # 6. Verify deployment
+      # 9. Verify deployment
       - name: Wait for deployment to settle
-        run: sleep 30
+        run: sleep 60
 
       - name: Check if app is running
         run: |
           echo "🔍 Checking app status..."
-          curl -f https://ramen-art-hackathon.azurewebsites.net/docs || echo "⚠️ App may still be starting..."
+          for i in {1..5}; do
+            if curl -f https://ramen-art-hackathon.azurewebsites.net/docs; then
+              echo "✅ App is running!"
+              exit 0
+            fi
+            echo "⏳ Attempt $i/5 failed, waiting..."
+            sleep 20
+          done
+          echo "⚠️ App may still be starting. Check Azure logs."
