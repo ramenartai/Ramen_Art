@@ -1,0 +1,32 @@
+name: Build and Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main3-deploy
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and Push to ACR
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az acr build --registry ${{ secrets.ACR_NAME }} --image ramen-art:${{ github.sha }} --image ramen-art:latest .
+
+      - name: Deploy to Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.WEB_APP_NAME }}
+          images: ${{ secrets.ACR_NAME }}.azurecr.io/ramen-art:${{ github.sha }}

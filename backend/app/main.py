@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 from app.db.mongodb import connect_db, close_db
 from app.routes import test, auth, z_image, story, character, refine_prompt, manga
 
@@ -8,6 +11,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "*", # Allow all for hackathon/production
         "http://localhost:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5173",
@@ -37,6 +41,25 @@ app.include_router(character.router)
 app.include_router(refine_prompt.router, prefix="/api")
 app.include_router(manga.router)
 
-@app.get("/")
-def root():
-    return {"status": "Backend running"}
+# Serve React App (Production/Docker)
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+
+if os.path.exists(static_dir):
+    # Mount assets
+    assets_dir = os.path.join(static_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+    
+    # Catch all for SPA
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Check if file exists in static (e.g. favicon.ico)
+        file_path = os.path.join(static_dir, full_path)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Otherwise return index.html
+        return FileResponse(os.path.join(static_dir, "index.html"))
+else:
+    @app.get("/")
+    def root():
+        return {"status": "Backend running"}
