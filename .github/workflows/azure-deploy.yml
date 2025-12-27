@@ -1,0 +1,98 @@
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. Set up Node.js for frontend
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    # 3. Build frontend
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+      env:
+        VITE_API_URL: ""
+        VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+        VITE_OPENAI_ENDPOINT_URI: ${{ secrets.VITE_OPENAI_ENDPOINT_URI }}
+        VITE_AZURE_OPENAI_DEPLOYMENT: ${{ secrets.VITE_AZURE_OPENAI_DEPLOYMENT }}
+        VITE_AZURE_OPENAI_API_VERSION: ${{ secrets.VITE_AZURE_OPENAI_API_VERSION }}
+
+    # 4. Move frontend to backend/static
+    - name: Copy frontend to backend
+      run: |
+        mkdir -p backend/static
+        cp -r frontend/dist/* backend/static/
+        echo "Frontend files copied to backend/static"
+        ls -la backend/static
+
+    # 5. Set up Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    # 6. Install backend dependencies
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # 7. Create startup script
+    - name: Create startup script
+      working-directory: ./backend
+      run: |
+        cat > startup.sh << 'EOF'
+        #!/bin/bash
+        echo "=== Starting Ramen Art AI Application ==="
+        echo "Installing dependencies..."
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        echo "Starting Gunicorn server..."
+        gunicorn app.main:app \
+          --workers 4 \
+          --worker-class uvicorn.workers.UvicornWorker \
+          --bind 0.0.0.0:8000 \
+          --timeout 120 \
+          --access-logfile - \
+          --error-logfile - \
+          --log-level info
+        EOF
+        chmod +x startup.sh
+        cat startup.sh
+
+    # 8. Deploy to Azure Web App
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'ramen-art-hackathon'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./backend
+        startup-command: 'bash startup.sh'
+
+    # 9. Restart app to ensure changes take effect
+    - name: Restart Azure Web App
+      run: |
+        az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }} || true
+        echo "Deployment completed. App will restart automatically."
