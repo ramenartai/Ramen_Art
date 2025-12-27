@@ -1,5 +1,8 @@
 # 🍜 Ramen Art AI
 
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/9e3908f1-b520-4ee3-a1bf-bedf1c824d3f" />
+
+
 **Ramen Art AI** is a powerful web application that combines AI-driven storytelling and character generation to help creators bring their narratives to life. Built with modern web technologies, it offers an intuitive interface for generating stories, creating original characters (OCs), and managing creative projects.
 
 ---
@@ -246,5 +249,6 @@ This project is licensed under the MIT License.
 For issues, questions, or suggestions, please open an issue on GitHub.
 
 ---
+
 
 **Made with ❤️ by the Ramen Art Team**
